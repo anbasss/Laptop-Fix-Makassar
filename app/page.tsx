@@ -14,12 +14,17 @@ import {
   CheckCircle2,
   Phone,
   RefreshCw,
-  Zap,
+  Wrench,
   Tag,
   ArrowRight,
+  ExternalLink,
+  Store,
+  Sparkles,
+  Check,
+  Percent,
 } from 'lucide-react'
 
-// Pastikan data selalu real-time / tidak di-cache statis
+// Real-time data fetching tanpa static cache
 export const revalidate = 0
 
 interface LaptopItem {
@@ -37,8 +42,8 @@ interface LaptopItem {
 }
 
 const WA_NUMBER = '6282346662991'
-const WA_DIRECT_HERO = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
-  'Halo Laptop Fix Makassar, saya ingin konsultasi mengenai jual beli / tukar tambah laptop.'
+const WA_DIRECT_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
+  'Halo Laptop Fix Makassar, saya ingin konsultasi mengenai stok laptop / servis / tukar tambah.'
 )}`
 
 function formatRupiah(amount?: number | null): string {
@@ -53,28 +58,39 @@ function formatRupiah(amount?: number | null): string {
 }
 
 function getWhatsAppProductUrl(productName: string): string {
-  const message = `Halo Laptop Fix Makassar, saya tertarik dengan laptop *${productName}*. Apakah unit ini masih tersedia?`
+  const message = `Halo Laptop Fix Makassar, saya tertarik dengan unit *${productName}*. Apakah unit ini masih ready di toko?`
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`
 }
 
-function getStatusBadgeClass(status?: string | null) {
-  const normalized = (status || 'Tersedia').toLowerCase()
-  // Aksen Merah #EE2D2D untuk Terjual / Sold Out (Selective urgency/status)
-  if (normalized.includes('terjual') || normalized.includes('sold') || normalized.includes('habis')) {
-    return 'bg-[#EE2D2D]/15 text-[#FF4D4D] border-[#EE2D2D]/40'
+function getStatusBadge(status?: string | null) {
+  const norm = (status || 'Tersedia').toLowerCase()
+  if (norm.includes('terjual') || norm.includes('sold') || norm.includes('habis')) {
+    return {
+      label: 'Terjual (Sold Out)',
+      className: 'bg-red-50 text-[#DC2626] border-red-200',
+    }
   }
-  if (normalized.includes('booking') || normalized.includes('booked') || normalized.includes('dp')) {
-    return 'bg-amber-500/15 text-amber-300 border-amber-500/35'
+  if (norm.includes('booking') || norm.includes('booked') || norm.includes('dp')) {
+    return {
+      label: 'Booking / DP',
+      className: 'bg-amber-50 text-amber-800 border-amber-200',
+    }
   }
-  // Biru Utama #2E5FE8 untuk unit Tersedia / Ready
-  return 'bg-[#2E5FE8]/15 text-[#4B77FA] border-[#2E5FE8]/35'
+  if (norm.includes('like new') || norm.includes('mulus')) {
+    return {
+      label: 'Like New 98%',
+      className: 'bg-blue-50 text-[#1E40AF] border-blue-200',
+    }
+  }
+  return {
+    label: 'Ready Stock',
+    className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  }
 }
 
 export default async function HomePage() {
   const supabase = createClient()
-  
   let laptops: LaptopItem[] = []
-  let fetchError = false
 
   try {
     const { data, error } = await supabase
@@ -82,66 +98,70 @@ export default async function HomePage() {
       .select('name, brand, cpu, ram, storage, gpu, price, status, image_url')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching laptops from Supabase:', error.message)
-      fetchError = true
-    } else if (data) {
+    if (!error && data) {
       laptops = data as LaptopItem[]
     }
   } catch (err) {
-    console.error('Unexpected error:', err)
-    fetchError = true
+    console.error('Error loading laptops:', err)
   }
 
+  // Cari unit featured untuk ditampilkan di hero jika ada
+  const featuredLaptop = laptops.find(
+    (l) => !(l.status || '').toLowerCase().includes('terjual')
+  ) || laptops[0]
+
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col font-sans selection:bg-[#2E5FE8]/30 selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-[#1E40AF]/15 selection:text-[#1E40AF]">
+      {/* ==================== TOP ANNOUNCEMENT BAR ==================== */}
+      <div className="bg-[#1E40AF] text-white text-xs py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-[#DC2626] animate-pulse" />
+        <span>Toko Buka Setiap Hari (09.00 - 21.00 WITA) • Jl. Sultan Alauddin No. 137E, Makassar</span>
+        <span className="hidden sm:inline text-blue-200">|</span>
+        <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" className="hidden sm:inline font-bold underline hover:text-blue-100">
+          Chat Langsung WA: 0823-4666-2991
+        </a>
+      </div>
+
       {/* ==================== NAVBAR ==================== */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/[0.07] bg-[#0A0A0F]/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between">
-          {/* Brand Logo (Ready for landscape / wide logo file or styled brandmark) */}
-          <Link href="/" className="flex items-center gap-3.5 group py-2">
-            {/* Logo image support with automatic fallback */}
-            <div className="relative flex items-center">
-              {/* If user uploads /logo.png or /logo.svg, it will display gracefully here */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-[#2E5FE8] text-white flex items-center justify-center font-black shadow-[0_0_15px_rgba(46,95,232,0.35)] shrink-0">
-                  <LaptopIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-heading font-black text-lg sm:text-xl tracking-tight text-white uppercase">
-                      LAPTOP <span className="text-[#2E5FE8]">FIX</span>
-                    </span>
-                    {/* Small selective Red Accent Dot */}
-                    <span className="w-2 h-2 rounded-full bg-[#EE2D2D] shadow-[0_0_6px_#EE2D2D]" />
-                  </div>
-                  <span className="text-[10px] sm:text-[11px] text-[#A0A8B8] font-bold tracking-widest uppercase">
-                    MAKASSAR • JUAL BELI &amp; SERVIS
-                  </span>
-                </div>
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          {/* Logo & Brand Identity */}
+          <Link href="/" className="flex items-center gap-3.5 group">
+            <div className="w-10 h-10 rounded-xl bg-[#1E40AF] text-white flex items-center justify-center font-bold shadow-md shrink-0 group-hover:bg-[#1E3A8A] transition-colors">
+              <LaptopIcon className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span className="font-heading font-black text-xl tracking-tight text-slate-900 uppercase">
+                  LAPTOP <span className="text-[#1E40AF]">FIX</span>
+                </span>
+                <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
               </div>
+              <span className="text-[10px] text-slate-500 font-bold tracking-wider uppercase">
+                MAKASSAR • JUAL BELI &amp; SERVIS
+              </span>
             </div>
           </Link>
 
-          {/* Nav Actions */}
-          <div className="flex items-center gap-4 sm:gap-6">
-            <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-[#A0A8B8]">
-              <a href="#katalog" className="hover:text-[#2E5FE8] transition-colors">
+          {/* Nav Links & Contact CTA */}
+          <div className="flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+              <a href="#katalog" className="hover:text-[#1E40AF] transition-colors">
                 Katalog Laptop
               </a>
-              <a href="#keunggulan" className="hover:text-[#2E5FE8] transition-colors">
-                Layanan &amp; Garansi
+              <a href="#layanan" className="hover:text-[#1E40AF] transition-colors">
+                Layanan &amp; Servis
               </a>
-              <a href="#kontak" className="hover:text-[#2E5FE8] transition-colors">
+              <a href="#lokasi" className="hover:text-[#1E40AF] transition-colors">
                 Lokasi Toko
               </a>
             </nav>
 
             <a
-              href={WA_DIRECT_HERO}
+              href={WA_DIRECT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md bg-[#2E5FE8] text-white text-xs sm:text-sm font-bold tracking-wide hover:bg-[#224EC4] transition shadow-[0_0_18px_rgba(46,95,232,0.30)] hover:shadow-[0_0_24px_rgba(46,95,232,0.45)] active:scale-95"
+              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs sm:text-sm font-bold tracking-wide transition-all shadow-sm hover:shadow active:scale-95"
             >
               <MessageCircle className="w-4 h-4 fill-white/20" />
               <span>Hubungi WhatsApp</span>
@@ -150,495 +170,509 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* ==================== HERO SECTION ==================== */}
-      <section className="relative pt-10 pb-0 overflow-hidden border-b border-white/[0.07] bg-[#0A0A0F]">
-        {/* Physical store workshop textures: subtle diagonal linear grid */}
-        <div 
-          className="absolute inset-0 opacity-[0.035] pointer-events-none"
-          style={{
-            backgroundImage: `repeating-linear-gradient(45deg, #2E5FE8 0, #2E5FE8 1px, transparent 0, transparent 32px)`
-          }}
-        />
-        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] bg-[#2E5FE8]/12 blur-[140px] rounded-full pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 lg:pb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-            {/* Left Column: Text & CTAs (Industrial Headline, Dominant Blue & Selective Red Accent) */}
-            <div className="lg:col-span-7 text-left space-y-6">
-              {/* Technical Store Identifier with Selective Red Pulse Dot */}
-              <div className="flex items-center gap-2 text-[11px] font-mono font-semibold tracking-wider text-[#A0A8B8] uppercase">
-                <span className="inline-block w-2 h-2 rounded-full bg-[#EE2D2D] shadow-[0_0_8px_#EE2D2D]" />
+      {/* ==================== HERO SECTION (CLEAN LIGHT E-COMMERCE THEME) ==================== */}
+      <section className="relative pt-10 pb-14 sm:pt-14 sm:pb-20 bg-gradient-to-b from-white via-slate-50 to-[#F1F5F9] border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            
+            {/* Left Column: Heading, Trust Copy, CTAs */}
+            <div className="lg:col-span-7 space-y-6 text-left">
+              {/* Location / Status Pill */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-[#1E40AF] shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse" />
                 <span>TOKO FISIK: JL. SULTAN ALAUDDIN NO. 137E, MAKASSAR</span>
               </div>
 
-              {/* Main Headline: Solid pure white, bold industrial weight, uppercase */}
-              <h1 className="font-heading font-black text-3xl sm:text-5xl lg:text-[52px] text-white tracking-tight leading-[1.08] uppercase">
-                JUAL BELI &amp; TUKAR TAMBAH LAPTOP BEKAS BERKUALITAS DI MAKASSAR
+              {/* Main Headline */}
+              <h1 className="font-heading font-black text-3xl sm:text-5xl lg:text-[50px] text-slate-900 tracking-tight leading-[1.12] uppercase">
+                JUAL BELI, TUKAR TAMBAH &amp; SERVIS LAPTOP <span className="text-[#1E40AF]">BERKUALITAS DI MAKASSAR</span>
               </h1>
 
-              {/* Subtext with readable #A0A8B8 contrast */}
-              <p className="text-[#A0A8B8] text-sm sm:text-base lg:text-lg max-w-xl leading-relaxed">
-                Unit second terpilih dengan pengujian hardware menyeluruh: motherboard, layar, keyboard, baterai, hingga thermal paste baru. Siap pakai untuk kerja, kuliah, programming, dan gaming.
+              {/* Subtext */}
+              <p className="text-slate-600 text-base sm:text-lg max-w-xl leading-relaxed">
+                Pusat laptop second bergaransi resmi toko Makassar. Setiap unit lolos uji QC hardware 100%, 
+                fisik mulus, dan bebas dites sepuasnya langsung di toko kami sebelum beli.
               </p>
 
-              {/* Action Buttons: Solid Blue Primary CTA & Sharp Dark Outline Secondary */}
-              <div className="pt-2 flex flex-wrap items-center gap-3.5">
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-wrap items-center gap-4">
                 <a
                   href="#katalog"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-md bg-[#2E5FE8] text-white font-bold text-xs sm:text-sm tracking-wider uppercase hover:bg-[#224EC4] transition shadow-[0_0_20px_rgba(46,95,232,0.30)] hover:shadow-[0_0_28px_rgba(46,95,232,0.50)] active:scale-95"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#1E40AF] hover:bg-[#1E3A8A] text-white font-bold text-sm tracking-wide transition shadow-md hover:shadow-lg active:scale-95"
                 >
                   <span>LIHAT STOK TERSEDIA</span>
                   <ArrowRight className="w-4 h-4" />
                 </a>
                 <a
-                  href={WA_DIRECT_HERO}
+                  href={WA_DIRECT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-md border border-slate-700/80 bg-[#12141C] text-slate-200 font-semibold text-xs sm:text-sm hover:border-[#2E5FE8]/60 hover:text-white hover:bg-[#181B26] transition active:scale-95"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm transition shadow-sm active:scale-95"
                 >
-                  <MessageCircle className="w-4 h-4 text-[#2E5FE8]" />
-                  <span>KONSULTASI / TUKAR TAMBAH</span>
+                  <MessageCircle className="w-4 h-4 text-[#DC2626]" />
+                  <span>KONSULTASI &amp; TUKAR TAMBAH</span>
                 </a>
               </div>
+
+              {/* Real World Trust Factors */}
+              <div className="pt-4 flex flex-wrap items-center gap-y-2 gap-x-6 text-xs font-semibold text-slate-700 border-t border-slate-200">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>100% Lolos QC Hardware</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#1E40AF] shrink-0" />
+                  <span>Garansi Resmi Toko</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Store className="w-4 h-4 text-[#DC2626] shrink-0" />
+                  <span>Bisa Cek Langsung di Toko</span>
+                </div>
+              </div>
             </div>
 
-            {/* Right Column: 3/4 Angled Laptop Showcase (Instagram Catalog Studio Style) */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative mx-auto max-w-md lg:max-w-none">
-                {/* Visual Showcase Card with Deep Blue Studio Depth */}
-                <div className="relative rounded-xl border border-white/[0.08] bg-[#12141C] p-4 shadow-[0_0_35px_rgba(0,0,0,0.6)] overflow-hidden group">
-                  {/* Photo Frame Header: Instagram / Showroom Tag */}
-                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08] text-[11px] font-mono text-[#A0A8B8]">
-                    <span className="flex items-center gap-1.5 text-white font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-[#2E5FE8] shadow-[0_0_8px_#2E5FE8]" />
-                      LIVE STORE UNIT
+            {/* Right Column: Featured Product Showcase Card */}
+            <div className="lg:col-span-5">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden group hover:border-[#1E40AF]/40 transition-all duration-300">
+                
+                {/* Showcase Header Bar */}
+                <div className="bg-slate-50 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <Check className="w-3 h-3 text-emerald-700" />
+                      TERVERIFIKASI QC TOKO
                     </span>
-                    <span className="text-[#4B77FA] font-semibold">@laptopfixmakassar</span>
                   </div>
+                  <span className="text-xs font-bold text-[#DC2626] flex items-center gap-1">
+                    <Percent className="w-3.5 h-3.5" />
+                    BEST DEAL HARI INI
+                  </span>
+                </div>
 
-                  {/* 3/4 Isometric Perspective Display with Studio Lighting Backdrop */}
-                  <div className="relative aspect-[4/3] w-full rounded-lg bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#172554] via-[#0E1626] to-[#070A10] border border-[#2E5FE8]/30 overflow-hidden flex items-center justify-center p-4">
-                    {/* Atmospheric diagonal grid watermark */}
-                    <div 
-                      className="absolute inset-0 opacity-[0.06]"
-                      style={{
-                        backgroundImage: `repeating-linear-gradient(-45deg, #FFF 0, #FFF 1px, transparent 0, transparent 16px)`
-                      }}
+                {/* Laptop Image Frame */}
+                <div className="relative aspect-[16/10] bg-gradient-to-b from-slate-100 to-slate-200 border-b border-slate-200 flex items-center justify-center p-6 overflow-hidden">
+                  {featuredLaptop?.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={featuredLaptop.image_url}
+                      alt={featuredLaptop.name}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
-
-                    {/* Blue Glow Center */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#2E5FE8]/15 blur-[60px] rounded-full pointer-events-none" />
-
-                    {/* Realistic 3/4 Angled Laptop Visual Representation */}
-                    <div className="relative w-full h-full flex flex-col items-center justify-center [perspective:1000px] z-10">
-                      {/* Laptop Screen (Angled back) */}
-                      <div className="relative w-[78%] h-[58%] rounded-t-lg bg-gradient-to-b from-slate-900 to-black border-2 border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.8)] flex flex-col justify-between p-2.5 transform -rotate-1 group-hover:rotate-0 transition-transform duration-500">
-                        {/* Camera dot */}
-                        <div className="w-1 h-1 rounded-full bg-slate-500 mx-auto" />
-                        {/* Screen Content: Diagnostic / Performance Test */}
-                        <div className="rounded bg-[#070B14] border border-[#2E5FE8]/30 p-2 text-left space-y-1 my-auto">
-                          <div className="flex items-center justify-between text-[9px] font-mono">
-                            <span className="text-[#4B77FA] font-bold">LFX BENCHMARK // QC PASS</span>
-                            <span className="text-[#EE2D2D] font-bold">100% OK</span>
-                          </div>
-                          <div className="w-full bg-[#121826] h-1 rounded-full overflow-hidden">
-                            <div className="bg-[#2E5FE8] h-full w-[94%]" />
-                          </div>
-                          <div className="flex justify-between text-[8px] font-mono text-[#A0A8B8] pt-0.5">
-                            <span>CPU: TEMP 42°C</span>
-                            <span>BATTERY: EXCELLENT</span>
-                          </div>
-                        </div>
-                        {/* Bottom bezel logo */}
-                        <div className="text-[8px] font-mono text-slate-400 text-center tracking-widest uppercase">
-                          LAPTOP FIX MAKASSAR
-                        </div>
-                      </div>
-
-                      {/* Laptop Base / Keyboard Deck */}
-                      <div className="relative w-[92%] h-[26%] -mt-1 rounded-b-lg bg-gradient-to-b from-slate-800 via-slate-850 to-slate-900 border-x-2 border-b-2 border-slate-700/80 shadow-2xl transform rotate-x-[35deg] flex flex-col items-center justify-center p-1">
-                        {/* Keyboard keys pattern */}
-                        <div className="w-[85%] h-2.5 bg-slate-950/90 rounded border border-slate-700/50 mb-1" />
-                        {/* Trackpad */}
-                        <div className="w-8 h-2 bg-slate-950 rounded-sm border border-slate-700/60" />
-                      </div>
-
-                      {/* Realistic Shadow beneath laptop */}
-                      <div className="w-[85%] h-3 bg-black/90 blur-md rounded-full mt-1" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                      <LaptopIcon className="w-20 h-20 stroke-[1.25] text-slate-400" />
+                      <span className="text-xs font-semibold text-slate-500 mt-2">Display Unit Showroom</span>
                     </div>
+                  )}
 
-                    {/* Showroom Physical Sticker Overlay */}
-                    <div className="absolute bottom-3 left-3 bg-[#0A0A0F]/90 border border-white/[0.1] rounded px-2 py-1 text-[10px] font-mono text-[#A0A8B8] backdrop-blur-sm shadow-md z-20">
-                      <span className="text-[#4B77FA] font-bold">QC PASSED:</span> MOTHERBOARD • LCD • BATTERY
-                    </div>
+                  {/* Floating Grade Badge */}
+                  <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm border border-slate-200 shadow-sm px-2.5 py-1 rounded-md text-[11px] font-bold text-slate-800">
+                    Grade A • Mulus 98%
                   </div>
 
-                  {/* Photo Frame Footer: Supported Brands */}
-                  <div className="mt-3 pt-2.5 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-[#A0A8B8]">
-                    <span className="font-semibold text-white">UNIT TERSEDIA:</span>
-                    <span className="font-mono text-[10px] text-[#A0A8B8] truncate">
-                      ThinkPad • ASUS ROG • TUF • Dell • MacBook
-                    </span>
+                  {/* Brand Tag */}
+                  <div className="absolute top-3 right-3 bg-[#1E40AF] text-white px-2.5 py-0.5 rounded text-[11px] font-bold uppercase shadow-sm">
+                    {featuredLaptop?.brand || 'Lenovo'}
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* ==================== FEATURE STRIP (HORIZONTAL COMPACT STRIP) ==================== */}
-        <div className="border-t border-white/[0.07] bg-[#0D0F16]">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-white/[0.07] text-left">
-              {/* Feature 1 */}
-              <div className="p-4 sm:p-5 flex flex-col justify-center">
-                <div className="text-[11px] font-mono font-bold text-[#2E5FE8] tracking-wider mb-0.5">
-                  01 / QC HARDWARE 100%
-                </div>
-                <p className="text-xs text-[#A0A8B8] font-medium leading-snug">
-                  Tes ketat motherboard, suhu thermal, layar &amp; baterai.
-                </p>
-              </div>
+                {/* Product Info & Specs */}
+                <div className="p-5 space-y-4">
+                  <div>
+                    <h3 className="font-heading font-black text-lg text-slate-900 leading-snug group-hover:text-[#1E40AF] transition-colors">
+                      {featuredLaptop?.name || 'Lenovo ThinkPad T14 Gen 2 - Intel Core i5'}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Cocok untuk Office, Coding, Desain Grafis, dan Kuliah
+                    </p>
+                  </div>
 
-              {/* Feature 2 */}
-              <div className="p-4 sm:p-5 flex flex-col justify-center">
-                <div className="text-[11px] font-mono font-bold text-[#2E5FE8] tracking-wider mb-0.5">
-                  02 / GARANSI TOKO JELAS
-                </div>
-                <p className="text-xs text-[#A0A8B8] font-medium leading-snug">
-                  Jaminan replace &amp; servis purna jual transparan.
-                </p>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="p-4 sm:p-5 flex flex-col justify-center">
-                <div className="text-[11px] font-mono font-bold text-[#2E5FE8] tracking-wider mb-0.5">
-                  03 / TUKAR TAMBAH MUDAH
-                </div>
-                <p className="text-xs text-[#A0A8B8] font-medium leading-snug">
-                  Terima tukar laptop lama dengan taksiran wajar di toko.
-                </p>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="p-4 sm:p-5 flex flex-col justify-center">
-                <div className="text-[11px] font-mono font-bold text-[#2E5FE8] tracking-wider mb-0.5">
-                  04 / UNIT SIAP PAKAI
-                </div>
-                <p className="text-xs text-[#A0A8B8] font-medium leading-snug">
-                  OS &amp; software kerja harian sudah terinstalasi rapi.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== PRODUCT GRID SECTION ==================== */}
-      <section id="katalog" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-4 border-b border-white/[0.07] gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#2E5FE8] tracking-wider uppercase mb-1">
-              <Tag className="w-3.5 h-3.5" />
-              <span>Katalog Unit Terbaru</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <h2 className="font-heading font-extrabold text-2xl sm:text-4xl text-white tracking-tight">
-                Pilihan Laptop Siap Kerja &amp; Gaming
-              </h2>
-              {/* Subtle selective Red Accent line */}
-              <span className="hidden sm:inline-block w-8 h-1 bg-[#EE2D2D] rounded-full mt-2" />
-            </div>
-          </div>
-          <p className="text-sm text-[#A0A8B8] max-w-sm">
-            Semua unit telah melewati pengecekan hardware, siap uji coba langsung di toko kami di Alauddin.
-          </p>
-        </div>
-
-        {/* Handling Empty State or No Data */}
-        {(!laptops || laptops.length === 0) ? (
-          <div className="rounded-2xl border border-white/[0.08] bg-[#12141C] p-12 text-center max-w-xl mx-auto my-8 shadow-xl">
-            <div className="w-16 h-16 rounded-2xl bg-[#0D0F16] border border-[#2E5FE8]/30 flex items-center justify-center mx-auto mb-4 text-[#2E5FE8]">
-              <LaptopIcon className="w-8 h-8 opacity-80" />
-            </div>
-            <h3 className="font-heading font-bold text-xl text-white mb-2">
-              Belum ada produk
-            </h3>
-            <p className="text-[#A0A8B8] text-sm mb-6 leading-relaxed">
-              Saat ini katalog laptop sedang diperbarui atau stok baru sedang dalam tahap pengecekan (QC). 
-              Silakan hubungi kami via WhatsApp untuk menanyakan stok unit yang tersedia di toko.
-            </p>
-            <a
-              href={WA_DIRECT_HERO}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#2E5FE8] text-white text-sm font-bold hover:bg-[#224EC4] transition shadow-[0_0_15px_rgba(46,95,232,0.30)]"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>Tanya Stok via WhatsApp</span>
-            </a>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {laptops.map((laptop, index) => {
-              const statusText = laptop.status || 'Tersedia'
-              const waUrl = getWhatsAppProductUrl(laptop.name)
-              const badgeClass = getStatusBadgeClass(laptop.status)
-
-              return (
-                <div
-                  key={laptop.id || `${laptop.name}-${index}`}
-                  className="group rounded-xl bg-[#12141C] border border-white/[0.07] hover:border-[#2E5FE8]/60 transition-all duration-300 flex flex-col overflow-hidden shadow-lg hover:shadow-[0_0_25px_rgba(46,95,232,0.15)]"
-                >
-                  {/* Image Container with Top-Left Badge */}
-                  <div className="relative aspect-[16/10] w-full bg-[#0A0A0F] border-b border-white/[0.07] overflow-hidden flex items-center justify-center">
-                    {laptop.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={laptop.image_url}
-                        alt={laptop.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-slate-600 gap-2 p-4 text-center">
-                        <LaptopIcon className="w-12 h-12 stroke-[1.25] text-slate-700" />
-                        <span className="text-[11px] text-[#A0A8B8] font-medium">Foto Belum Tersedia</span>
-                      </div>
-                    )}
-
-                    {/* Badge Status in Top-Left Corner (uses Blue for Tersedia, Red for Terjual) */}
-                    <div className="absolute top-3 left-3 z-10">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border backdrop-blur-md shadow-sm ${badgeClass}`}
-                      >
-                        {statusText}
+                  {/* Specs Grid */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-2">
+                      <Cpu className="w-3.5 h-3.5 text-[#1E40AF] shrink-0" />
+                      <span className="font-medium text-slate-800 truncate">
+                        {featuredLaptop?.cpu || 'Core i5 11th Gen'}
                       </span>
                     </div>
 
-                    {/* Brand Tag in Top-Right Corner */}
-                    {laptop.brand && (
-                      <div className="absolute top-3 right-3 z-10">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#0A0A0F]/90 text-[#A0A8B8] border border-white/[0.08] backdrop-blur-sm">
-                          {laptop.brand}
-                        </span>
-                      </div>
-                    )}
+                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-2">
+                      <Layers className="w-3.5 h-3.5 text-[#1E40AF] shrink-0" />
+                      <span className="font-medium text-slate-800 truncate">
+                        {featuredLaptop?.ram || '16GB DDR4'}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-2">
+                      <HardDrive className="w-3.5 h-3.5 text-[#1E40AF] shrink-0" />
+                      <span className="font-medium text-slate-800 truncate">
+                        {featuredLaptop?.storage || '512GB SSD NVMe'}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center gap-2">
+                      <Monitor className="w-3.5 h-3.5 text-[#1E40AF] shrink-0" />
+                      <span className="font-medium text-slate-800 truncate">
+                        {featuredLaptop?.gpu || 'Intel Iris Xe'}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Product Details */}
-                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  {/* Price & Action Button */}
+                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-heading font-bold text-base text-white group-hover:text-[#4B77FA] transition-colors line-clamp-2 leading-snug">
-                        {laptop.name}
-                      </h3>
-
-                      {/* Brief Specs List with Dominant Blue #2E5FE8 Icons */}
-                      <div className="mt-3.5 grid grid-cols-2 gap-2 text-xs">
-                        {/* CPU */}
-                        <div className="p-2 rounded-lg bg-[#0D0F16] border border-white/[0.05] flex items-start gap-2">
-                          <Cpu className="w-3.5 h-3.5 text-[#2E5FE8] shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                              CPU
-                            </span>
-                            <span className="text-[#A0A8B8] truncate block font-medium">
-                              {laptop.cpu || 'Standar'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* RAM */}
-                        <div className="p-2 rounded-lg bg-[#0D0F16] border border-white/[0.05] flex items-start gap-2">
-                          <Layers className="w-3.5 h-3.5 text-[#2E5FE8] shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                              RAM
-                            </span>
-                            <span className="text-[#A0A8B8] truncate block font-medium">
-                              {laptop.ram || '-'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Storage */}
-                        <div className="p-2 rounded-lg bg-[#0D0F16] border border-white/[0.05] flex items-start gap-2">
-                          <HardDrive className="w-3.5 h-3.5 text-[#2E5FE8] shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                              Storage
-                            </span>
-                            <span className="text-[#A0A8B8] truncate block font-medium">
-                              {laptop.storage || '-'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* GPU */}
-                        <div className="p-2 rounded-lg bg-[#0D0F16] border border-white/[0.05] flex items-start gap-2">
-                          <Monitor className="w-3.5 h-3.5 text-[#2E5FE8] shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                              GPU
-                            </span>
-                            <span className="text-[#A0A8B8] truncate block font-medium">
-                              {laptop.gpu || 'Integrated'}
-                            </span>
-                          </div>
-                        </div>
+                      <span className="text-[11px] text-slate-500 block font-medium">Harga Promo:</span>
+                      <div className="font-heading font-black text-2xl text-[#DC2626]">
+                        {formatRupiah(featuredLaptop?.price || 5750000)}
                       </div>
                     </div>
 
-                    {/* Price and CTA Button */}
-                    <div className="pt-3 border-t border-white/[0.07] space-y-3">
-                      <div>
-                        <span className="text-[11px] text-[#A0A8B8] font-medium block">
-                          Harga Nett:
-                        </span>
-                        <div className="font-heading font-extrabold text-2xl text-white tracking-tight">
-                          {formatRupiah(laptop.price)}
-                        </div>
-                      </div>
-
-                      <a
-                        href={waUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-md bg-[#2E5FE8] text-white font-bold text-xs sm:text-sm hover:bg-[#224EC4] active:scale-[0.98] transition-all shadow-[0_0_16px_rgba(46,95,232,0.25)] hover:shadow-[0_0_22px_rgba(46,95,232,0.40)]"
-                      >
-                        <MessageCircle className="w-4 h-4 fill-white/20" />
-                        <span>Chat Sekarang</span>
-                      </a>
-                    </div>
+                    <a
+                      href={getWhatsAppProductUrl(featuredLaptop?.name || 'ThinkPad T14 Gen 2')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs sm:text-sm transition shadow-sm active:scale-95"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Cek Detail Unit</span>
+                    </a>
                   </div>
+
                 </div>
-              )
-            })}
+
+              </div>
+            </div>
+
           </div>
-        )}
+        </div>
       </section>
 
-      {/* ==================== SERVICES & GUARANTEE SECTION ==================== */}
-      <section id="keunggulan" className="py-16 bg-[#0D0F16] border-y border-white/[0.07]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="font-heading font-extrabold text-2xl sm:text-3xl text-white">
-              Mengapa Memilih <span className="text-[#2E5FE8]">Laptop Fix Makassar</span>?
-            </h2>
-            <p className="mt-3 text-[#A0A8B8] text-sm">
-              Kami memprioritaskan transparansi, kualitas unit, dan kenyamanan purna jual bagi seluruh pelanggan.
-            </p>
+      {/* ==================== 3 CORE SERVICES ==================== */}
+      <section id="layanan" className="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-bold text-[#1E40AF] mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-[#1E40AF]" />
+            <span>Solusi Lengkap Kebutuhan Laptop Anda</span>
+          </div>
+          <h2 className="font-heading font-black text-2xl sm:text-4xl text-slate-900 tracking-tight">
+            LAYANAN UTAMA KAMI
+          </h2>
+          <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+            Didukung teknisi berpengalaman dan stok laptop bergaransi untuk menunjang produktivitas Anda.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Jual Beli */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-7 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-[#1E40AF]/40 transition-all duration-300">
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#1E40AF] mb-5 font-bold">
+                <LaptopIcon className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">
+                Jual Beli Laptop Berkualitas
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Stok laptop second mulus siap pakai dari berbagai merk: Lenovo ThinkPad, ASUS ROG/TUF, Dell, HP, hingga MacBook dengan garansi toko terpercaya.
+              </p>
+            </div>
+            <div className="pt-6 mt-6 border-t border-slate-100 text-xs font-bold text-[#1E40AF] flex items-center gap-1.5">
+              <span>Unit Siap Kerja &amp; Lolos QC</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-xl bg-[#12141C] border border-white/[0.07] hover:border-[#2E5FE8]/40 transition">
-              <div className="w-12 h-12 rounded-lg bg-[#2E5FE8]/15 border border-[#2E5FE8]/30 flex items-center justify-center text-[#2E5FE8] mb-4">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h3 className="font-heading font-bold text-lg text-white mb-2">
-                Garansi Unit &amp; Pengecekan Terbuka
-              </h3>
-              <p className="text-[#A0A8B8] text-sm leading-relaxed">
-                Bebas tes benchmark, cek keyboard, layar, baterai, dan performa mesin sepuasnya langsung di toko sebelum transaksi.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-xl bg-[#12141C] border border-white/[0.07] hover:border-[#2E5FE8]/40 transition">
-              <div className="w-12 h-12 rounded-lg bg-[#2E5FE8]/15 border border-[#2E5FE8]/30 flex items-center justify-center text-[#2E5FE8] mb-4">
+          {/* Card 2: Tukar Tambah */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-7 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-[#1E40AF]/40 transition-all duration-300">
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-[#DC2626] mb-5 font-bold">
                 <RefreshCw className="w-6 h-6" />
               </div>
-              <h3 className="font-heading font-bold text-lg text-white mb-2">
-                Tukar Tambah &amp; Upgrade Fleksibel
+              <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">
+                Tukar Tambah Unit Lama
               </h3>
-              <p className="text-[#A0A8B8] text-sm leading-relaxed">
-                Punya laptop lama ingin upgrade ke spek lebih kencang? Bawa unit Anda untuk kami taksir dengan harga wajar dan jujur.
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Ingin upgrade spek ke laptop yang lebih kencang? Bawa unit lama Anda ke toko kami untuk ditaksir dengan harga jujur, transparan, dan bersahabat.
               </p>
             </div>
+            <div className="pt-6 mt-6 border-t border-slate-100 text-xs font-bold text-[#DC2626] flex items-center gap-1.5">
+              <span>Taksiran Cepat &amp; Fair</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
 
-            <div className="p-6 rounded-xl bg-[#12141C] border border-white/[0.07] hover:border-[#2E5FE8]/40 transition">
-              <div className="w-12 h-12 rounded-lg bg-[#2E5FE8]/15 border border-[#2E5FE8]/30 flex items-center justify-center text-[#2E5FE8] mb-4">
-                <Zap className="w-6 h-6" />
+          {/* Card 3: Servis Spesialis */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-7 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-[#1E40AF]/40 transition-all duration-300">
+            <div>
+              <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#1E40AF] mb-5 font-bold">
+                <Wrench className="w-6 h-6" />
               </div>
-              <h3 className="font-heading font-bold text-lg text-white mb-2">
-                Servis &amp; Sparepart Berpengalaman
+              <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">
+                Servis &amp; Upgrade Spesialis
               </h3>
-              <p className="text-[#A0A8B8] text-sm leading-relaxed">
-                Selain jual beli, kami juga melayani servis motherboard, ganti LCD, keyboard, instalasi ulang, serta pembersihan thermal paste.
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Perbaikan motherboard mati total, ganti LCD, keyboard, engsel patah, instalasi software, pembersihan kipas, dan upgrade RAM serta SSD super cepat.
               </p>
+            </div>
+            <div className="pt-6 mt-6 border-t border-slate-100 text-xs font-bold text-[#1E40AF] flex items-center gap-1.5">
+              <span>Pengerjaan Rapi &amp; Bergaransi</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ==================== FOOTER ==================== */}
-      <footer id="kontak" className="bg-[#07080D] border-t border-white/[0.07] text-[#A0A8B8] text-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            {/* Column 1: Info Toko */}
+      {/* ==================== PRODUCT CATALOG SECTION ==================== */}
+      <section id="katalog" className="py-16 sm:py-20 border-t border-slate-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-5 border-b border-slate-200 gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-bold text-[#1E40AF] uppercase tracking-wider mb-1">
+                <Tag className="w-3.5 h-3.5" />
+                <span>Katalog Unit Toko</span>
+              </div>
+              <h2 className="font-heading font-black text-2xl sm:text-4xl text-slate-900 tracking-tight">
+                PILIHAN LAPTOP READY STOCK
+              </h2>
+            </div>
+            <p className="text-sm text-slate-600 max-w-md">
+              Stok diperbarui setiap saat. Silakan datang langsung ke toko untuk uji coba performa atau hubungi admin via WhatsApp.
+            </p>
+          </div>
+
+          {/* Empty State */}
+          {laptops.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-12 text-center max-w-lg mx-auto shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto mb-4 text-[#1E40AF] shadow-sm">
+                <LaptopIcon className="w-7 h-7" />
+              </div>
+              <h3 className="font-heading font-bold text-lg text-slate-900 mb-2">
+                Katalog Sedang Diperbarui
+              </h3>
+              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
+                Unit baru sedang dalam proses pengecekan kualitas (QC). Silakan langsung hubungi admin untuk menanyakan ketersediaan stok laptop terbaru hari ini.
+              </p>
+              <a
+                href={WA_DIRECT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-xs sm:text-sm font-bold transition shadow-sm"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Tanya Stok via WhatsApp</span>
+              </a>
+            </div>
+          ) : (
+            /* Product Grid */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {laptops.map((laptop, idx) => {
+                const statusInfo = getStatusBadge(laptop.status)
+                const waUrl = getWhatsAppProductUrl(laptop.name)
+
+                return (
+                  <div
+                    key={laptop.id || idx}
+                    className="group rounded-2xl bg-white border border-slate-200 hover:border-[#1E40AF]/50 transition-all duration-300 flex flex-col overflow-hidden shadow-sm hover:shadow-lg"
+                  >
+                    {/* Thumbnail Image Container */}
+                    <div className="relative aspect-[16/10] w-full bg-slate-100 border-b border-slate-200 overflow-hidden flex items-center justify-center">
+                      {laptop.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={laptop.image_url}
+                          alt={laptop.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-slate-400 gap-2 p-4">
+                          <LaptopIcon className="w-10 h-10 stroke-[1.25]" />
+                          <span className="text-[11px] text-slate-500 font-medium">Foto Belum Tersedia</span>
+                        </div>
+                      )}
+
+                      {/* Top-Left Badge */}
+                      <div className="absolute top-3 left-3 z-10">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-sm ${statusInfo.className}`}
+                        >
+                          {statusInfo.label}
+                        </span>
+                      </div>
+
+                      {/* Brand Tag Top-Right */}
+                      {laptop.brand && (
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-900/80 text-white backdrop-blur-sm shadow-sm">
+                            {laptop.brand}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content Details */}
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div>
+                        <h3 className="font-heading font-bold text-base text-slate-900 group-hover:text-[#1E40AF] transition-colors line-clamp-2 leading-snug">
+                          {laptop.name}
+                        </h3>
+
+                        {/* Hardware Specs Pills */}
+                        <div className="mt-3.5 grid grid-cols-2 gap-2 text-xs">
+                          {/* CPU */}
+                          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-start gap-2">
+                            <Cpu className="w-3.5 h-3.5 text-[#1E40AF] shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <span className="block text-[9px] text-slate-500 uppercase tracking-wider font-bold">
+                                CPU
+                              </span>
+                              <span className="text-slate-800 truncate block font-medium">
+                                {laptop.cpu || 'Standar'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* RAM */}
+                          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-start gap-2">
+                            <Layers className="w-3.5 h-3.5 text-[#1E40AF] shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <span className="block text-[9px] text-slate-500 uppercase tracking-wider font-bold">
+                                RAM
+                              </span>
+                              <span className="text-slate-800 truncate block font-medium">
+                                {laptop.ram || '-'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Storage */}
+                          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-start gap-2">
+                            <HardDrive className="w-3.5 h-3.5 text-[#1E40AF] shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <span className="block text-[9px] text-slate-500 uppercase tracking-wider font-bold">
+                                Storage
+                              </span>
+                              <span className="text-slate-800 truncate block font-medium">
+                                {laptop.storage || '-'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* GPU */}
+                          <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-start gap-2">
+                            <Monitor className="w-3.5 h-3.5 text-[#1E40AF] shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <span className="block text-[9px] text-slate-500 uppercase tracking-wider font-bold">
+                                GPU
+                              </span>
+                              <span className="text-slate-800 truncate block font-medium">
+                                {laptop.gpu || 'Integrated'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Price & Action Button */}
+                      <div className="pt-3 border-t border-slate-100 space-y-3">
+                        <div>
+                          <span className="text-[11px] text-slate-500 font-medium block">
+                            Harga Nett:
+                          </span>
+                          <div className="font-heading font-black text-2xl text-slate-900 tracking-tight">
+                            {formatRupiah(laptop.price)}
+                          </div>
+                        </div>
+
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#1E40AF] hover:bg-[#1E3A8A] text-white font-bold text-xs sm:text-sm active:scale-[0.98] transition shadow-sm"
+                        >
+                          <MessageCircle className="w-4 h-4 fill-white/20" />
+                          <span>Chat Sekarang</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ==================== LOCATION & FOOTER ==================== */}
+      <footer id="lokasi" className="bg-slate-900 text-slate-400 text-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {/* Column 1: Store Bio */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#2E5FE8] text-white flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-lg bg-[#1E40AF] text-white flex items-center justify-center font-bold shadow-sm">
                   <LaptopIcon className="w-5 h-5" />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-heading font-bold text-lg text-white">
-                    LAPTOP <span className="text-[#2E5FE8]">FIX</span>
+                  <span className="font-heading font-black text-lg text-white">
+                    LAPTOP <span className="text-blue-400">FIX</span>
                   </span>
-                  <span className="w-2 h-2 rounded-full bg-[#EE2D2D]" />
+                  <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
                 </div>
               </div>
-              <p className="text-xs text-[#A0A8B8] leading-relaxed max-w-sm">
-                Pusat jual beli laptop bekas berkualitas, tukar tambah, dan servis spesialis laptop di kota Makassar.
+              <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
+                Spesialis jual beli laptop second berkualitas, tukar tambah cepat, dan layanan servis motherboard profesional di Kota Makassar.
               </p>
             </div>
 
-            {/* Column 2: Alamat & Jam Operasional */}
+            {/* Column 2: Alamat & Jam Kerja */}
             <div className="space-y-3">
-              <h4 className="font-heading font-bold text-white text-sm uppercase tracking-wider">
-                Lokasi &amp; Jam Buka
+              <h4 className="font-heading font-bold text-white text-xs uppercase tracking-wider">
+                Lokasi Toko &amp; Jam Buka
               </h4>
-              <div className="flex items-start gap-2.5 text-xs text-[#A0A8B8]">
-                <MapPin className="w-4 h-4 text-[#2E5FE8] shrink-0 mt-0.5" />
-                <span className="text-slate-200 font-medium">Jl. Sultan Alauddin No. 137E, Makassar</span>
+              <div className="flex items-start gap-2.5 text-xs text-slate-300">
+                <MapPin className="w-4 h-4 text-[#DC2626] shrink-0 mt-0.5" />
+                <span>Jl. Sultan Alauddin No. 137E, Makassar, Sulawesi Selatan</span>
               </div>
-              <div className="flex items-start gap-2.5 text-xs text-[#A0A8B8]">
-                <Clock className="w-4 h-4 text-[#2E5FE8] shrink-0 mt-0.5" />
-                <span>Jam Operasional: 09.00 - 21.00 WITA</span>
+              <div className="flex items-start gap-2.5 text-xs text-slate-300">
+                <Clock className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <span>Buka Setiap Hari: 09.00 - 21.00 WITA</span>
               </div>
             </div>
 
-            {/* Column 3: Kontak & Media Sosial */}
+            {/* Column 3: Kontak & Instagram */}
             <div className="space-y-3">
-              <h4 className="font-heading font-bold text-white text-sm uppercase tracking-wider">
-                Hubungi Kami
+              <h4 className="font-heading font-bold text-white text-xs uppercase tracking-wider">
+                Hubungi &amp; Media Sosial
               </h4>
               <div className="flex flex-col gap-2.5 text-xs">
                 <a
                   href={`https://wa.me/${WA_NUMBER}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[#A0A8B8] hover:text-[#2E5FE8] transition-colors"
+                  className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
                 >
-                  <Phone className="w-4 h-4 text-[#2E5FE8]" />
+                  <Phone className="w-4 h-4 text-emerald-400" />
                   <span>WhatsApp: +62 823-4666-2991</span>
                 </a>
                 <a
                   href="https://instagram.com/laptopfixmakassar"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-[#A0A8B8] hover:text-[#2E5FE8] transition-colors"
+                  className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
                 >
-                  <Instagram className="w-4 h-4 text-[#2E5FE8]" />
+                  <Instagram className="w-4 h-4 text-pink-400" />
                   <span>Instagram: @laptopfixmakassar</span>
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/[0.05] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <p>© {new Date().getFullYear()} Laptop Fix Makassar. Hak Cipta Dilindungi.</p>
             <Link href="/admin" className="text-slate-500 hover:text-slate-300 transition-colors">
-              Akses Admin
+              Panel Admin
             </Link>
           </div>
         </div>

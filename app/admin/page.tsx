@@ -371,24 +371,24 @@ export default function AdminDashboardPage() {
   const soldCount = laptops.filter((l) => (l.status || '').toLowerCase().includes('terjual')).length
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-slate-100 flex flex-col font-sans selection:bg-[#1E90FF]/30 selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-[#1E40AF]/15 selection:text-[#1E40AF]">
       {/* ==================== HEADER ==================== */}
-      <header className="sticky top-0 z-30 w-full border-b border-[#1E2230] bg-[#0A0A0F]/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#1E90FF]/10 border border-[#1E90FF]/30 flex items-center justify-center text-[#1E90FF]">
+      <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#1E40AF] text-white flex items-center justify-center font-bold shadow-md">
               <LaptopIcon className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-heading font-extrabold text-base sm:text-lg text-white">
-                  Laptop Fix <span className="text-[#1E90FF]">Makassar</span>
+                <span className="font-heading font-black text-lg text-slate-900 uppercase">
+                  Laptop Fix <span className="text-[#1E40AF]">Makassar</span>
                 </span>
-                <span className="rounded bg-[#1E90FF]/20 px-2 py-0.5 text-[10px] font-semibold text-[#1E90FF] uppercase tracking-wider border border-[#1E90FF]/30">
-                  Admin
+                <span className="rounded-md bg-blue-100 text-[#1E40AF] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border border-blue-200">
+                  Admin Panel
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 truncate max-w-xs">{userEmail}</p>
+              <p className="text-xs text-slate-500 truncate max-w-xs">{userEmail}</p>
             </div>
           </div>
 
@@ -396,15 +396,15 @@ export default function AdminDashboardPage() {
             <Link
               href="/"
               target="_blank"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-800 bg-[#12121A] text-xs font-medium text-slate-300 hover:text-white hover:border-slate-700 transition"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition"
             >
               <span>Lihat Website</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
             </Link>
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition active:scale-95"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-[#DC2626] hover:bg-red-100 transition active:scale-95"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Keluar</span>
@@ -418,79 +418,79 @@ export default function AdminDashboardPage() {
         {/* Toast Alert */}
         {feedback && (
           <div
-            className={`flex items-center justify-between p-4 rounded-xl border text-sm animate-in fade-in slide-in-from-top-2 duration-200 ${
+            className={`flex items-center justify-between p-4 rounded-xl border text-sm shadow-sm animate-in fade-in duration-200 ${
               feedback.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-red-500/10 border-red-500/30 text-red-400'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-red-50 border-red-200 text-[#DC2626]'
             }`}
           >
             <div className="flex items-center gap-2.5">
               {feedback.type === 'success' ? (
-                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
               ) : (
-                <AlertCircle className="w-5 h-5 shrink-0" />
+                <AlertCircle className="w-5 h-5 shrink-0 text-[#DC2626]" />
               )}
-              <span>{feedback.message}</span>
+              <span className="font-medium">{feedback.message}</span>
             </div>
             <button
               onClick={() => setFeedback(null)}
-              className="text-slate-400 hover:text-white transition"
+              className="text-slate-400 hover:text-slate-600 transition"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {/* Stats Row & Top Actions */}
+        {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-5 rounded-2xl bg-[#12121A] border border-[#1E2230] flex items-center justify-between">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Stok</p>
-              <p className="mt-1 font-heading text-2xl sm:text-3xl font-bold text-white">{totalCount}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Stok</p>
+              <p className="mt-1 font-heading text-3xl font-black text-slate-900">{totalCount}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[#1E90FF]">
-              <LaptopIcon className="w-5 h-5" />
+            <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#1E40AF]">
+              <LaptopIcon className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#12121A] border border-[#1E2230] flex items-center justify-between">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Unit Tersedia / Ready</p>
-              <p className="mt-1 font-heading text-2xl sm:text-3xl font-bold text-emerald-400">{availableCount}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Unit Tersedia / Ready</p>
+              <p className="mt-1 font-heading text-3xl font-black text-emerald-600">{availableCount}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#12121A] border border-[#1E2230] flex items-center justify-between">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Unit Terjual</p>
-              <p className="mt-1 font-heading text-2xl sm:text-3xl font-bold text-slate-400">{soldCount}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Unit Terjual</p>
+              <p className="mt-1 font-heading text-3xl font-black text-slate-400">{soldCount}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
-              <Tag className="w-5 h-5" />
+            <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+              <Tag className="w-6 h-6" />
             </div>
           </div>
         </div>
 
         {/* Control Bar: Search, Filter, Refresh, Add Button */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-[#12121A] border border-[#1E2230]">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
           <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Cari laptop berdasarkan nama, merk, prosesor..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-[#1E90FF] focus:outline-none focus:ring-1 focus:ring-[#1E90FF] transition"
+                className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#1E40AF] transition"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -501,7 +501,7 @@ export default function AdminDashboardPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="rounded-xl border border-slate-800 bg-[#0A0A0F] px-3 py-2 text-xs sm:text-sm text-slate-300 focus:border-[#1E90FF] focus:outline-none"
+              className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-700 font-medium focus:border-[#1E40AF] focus:outline-none"
             >
               <option value="ALL">Semua Status</option>
               <option value="Tersedia">Tersedia</option>
@@ -513,16 +513,16 @@ export default function AdminDashboardPage() {
             <button
               onClick={fetchLaptops}
               title="Refresh Data"
-              className="p-2.5 rounded-xl border border-slate-800 bg-[#0A0A0F] text-slate-400 hover:text-white hover:border-slate-700 transition shrink-0"
+              className="p-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 shadow-sm"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#1E90FF]' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#1E40AF]' : ''}`} />
             </button>
           </div>
 
           {/* Add New Laptop Button */}
           <button
             onClick={handleOpenCreate}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E90FF] text-white text-xs sm:text-sm font-semibold hover:bg-[#187bcd] transition shadow-lg shadow-[#1E90FF]/20 shrink-0 active:scale-95"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-xs sm:text-sm font-bold transition shadow-sm shrink-0 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Laptop Baru</span>
@@ -530,21 +530,21 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* ==================== LAPTOPS TABLE / LIST ==================== */}
-        <div className="rounded-2xl border border-[#1E2230] bg-[#12121A] overflow-hidden shadow-xl">
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-[#1E90FF]" />
-              <p className="text-sm">Memuat daftar laptop...</p>
+            <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-[#1E40AF]" />
+              <p className="text-sm font-medium">Memuat daftar laptop...</p>
             </div>
           ) : filteredLaptops.length === 0 ? (
             <div className="py-20 text-center px-4">
-              <LaptopIcon className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-              <h3 className="font-heading text-lg font-bold text-white mb-1">
+              <LaptopIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-heading text-lg font-bold text-slate-900 mb-1">
                 {searchQuery || filterStatus !== 'ALL'
                   ? 'Tidak ada laptop yang cocok dengan filter'
                   : 'Belum ada data laptop'}
               </h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto mb-5">
+              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5">
                 {searchQuery || filterStatus !== 'ALL'
                   ? 'Coba ganti kata kunci pencarian atau ubah filter status.'
                   : 'Mulai isi katalog dengan menekan tombol "Tambah Laptop Baru" di atas.'}
@@ -552,7 +552,7 @@ export default function AdminDashboardPage() {
               {!searchQuery && filterStatus === 'ALL' && (
                 <button
                   onClick={handleOpenCreate}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1E90FF] text-white text-xs font-semibold hover:bg-[#187bcd] transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-xs font-bold transition shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Tambah Laptop Pertama</span>
@@ -563,7 +563,7 @@ export default function AdminDashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#1E2230] bg-[#0E0E16] text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                     <th className="py-3.5 px-4">Foto</th>
                     <th className="py-3.5 px-4">Nama Laptop &amp; Merk</th>
                     <th className="py-3.5 px-4 hidden md:table-cell">Spesifikasi</th>
@@ -572,7 +572,7 @@ export default function AdminDashboardPage() {
                     <th className="py-3.5 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1E2230] text-xs text-slate-200">
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                   {filteredLaptops.map((laptop) => {
                     const status = laptop.status || 'Tersedia'
                     const isSold = status.toLowerCase().includes('terjual')
@@ -581,11 +581,11 @@ export default function AdminDashboardPage() {
                     return (
                       <tr
                         key={laptop.id}
-                        className="hover:bg-[#161622] transition-colors group"
+                        className="hover:bg-slate-50/80 transition-colors group"
                       >
                         {/* Thumbnail */}
                         <td className="py-3 px-4 w-16">
-                          <div className="w-14 h-11 rounded-lg bg-[#0A0A0F] border border-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+                          <div className="w-14 h-11 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                             {laptop.image_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -594,19 +594,19 @@ export default function AdminDashboardPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <ImageIcon className="w-4 h-4 text-slate-600" />
+                              <ImageIcon className="w-4 h-4 text-slate-400" />
                             )}
                           </div>
                         </td>
 
                         {/* Name & Brand */}
                         <td className="py-3 px-4 min-w-[180px]">
-                          <div className="font-heading font-bold text-sm text-white group-hover:text-[#1E90FF] transition-colors line-clamp-1">
+                          <div className="font-heading font-bold text-sm text-slate-900 group-hover:text-[#1E40AF] transition-colors line-clamp-1">
                             {laptop.name}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             {laptop.brand && (
-                              <span className="inline-block px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-medium">
+                              <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[10px] text-slate-600 font-bold border border-slate-200">
                                 {laptop.brand}
                               </span>
                             )}
@@ -615,29 +615,29 @@ export default function AdminDashboardPage() {
 
                         {/* Specs summary */}
                         <td className="py-3 px-4 hidden md:table-cell min-w-[220px]">
-                          <div className="flex flex-wrap gap-1 text-[11px] text-slate-400">
+                          <div className="flex flex-wrap gap-1 text-[11px] text-slate-600">
                             {laptop.cpu && (
-                              <span className="inline-flex items-center gap-1 bg-[#0A0A0F] px-2 py-0.5 rounded border border-slate-800/80">
-                                <Cpu className="w-3 h-3 text-[#1E90FF]" />
-                                <span className="truncate max-w-[120px]">{laptop.cpu}</span>
+                              <span className="inline-flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                <Cpu className="w-3 h-3 text-[#1E40AF]" />
+                                <span className="truncate max-w-[120px] font-medium">{laptop.cpu}</span>
                               </span>
                             )}
                             {laptop.ram && (
-                              <span className="inline-flex items-center gap-1 bg-[#0A0A0F] px-2 py-0.5 rounded border border-slate-800/80">
-                                <Layers className="w-3 h-3 text-[#1E90FF]" />
-                                <span>{laptop.ram}</span>
+                              <span className="inline-flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                <Layers className="w-3 h-3 text-[#1E40AF]" />
+                                <span className="font-medium">{laptop.ram}</span>
                               </span>
                             )}
                             {laptop.storage && (
-                              <span className="inline-flex items-center gap-1 bg-[#0A0A0F] px-2 py-0.5 rounded border border-slate-800/80">
-                                <HardDrive className="w-3 h-3 text-[#1E90FF]" />
-                                <span>{laptop.storage}</span>
+                              <span className="inline-flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                <HardDrive className="w-3 h-3 text-[#1E40AF]" />
+                                <span className="font-medium">{laptop.storage}</span>
                               </span>
                             )}
                             {laptop.gpu && (
-                              <span className="inline-flex items-center gap-1 bg-[#0A0A0F] px-2 py-0.5 rounded border border-slate-800/80">
-                                <Monitor className="w-3 h-3 text-[#1E90FF]" />
-                                <span className="truncate max-w-[100px]">{laptop.gpu}</span>
+                              <span className="inline-flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                <Monitor className="w-3 h-3 text-[#1E40AF]" />
+                                <span className="truncate max-w-[100px] font-medium">{laptop.gpu}</span>
                               </span>
                             )}
                           </div>
@@ -645,7 +645,7 @@ export default function AdminDashboardPage() {
 
                         {/* Price */}
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span className="font-heading font-bold text-sm text-[#1E90FF]">
+                          <span className="font-heading font-black text-sm text-slate-900">
                             {formatRupiah(laptop.price)}
                           </span>
                         </td>
@@ -653,12 +653,12 @@ export default function AdminDashboardPage() {
                         {/* Status */}
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${
                               isSold
-                                ? 'bg-slate-800 text-slate-400 border-slate-700'
+                                ? 'bg-red-50 text-[#DC2626] border-red-200'
                                 : isBooking
-                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                                : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             }`}
                           >
                             {status}
@@ -670,14 +670,14 @@ export default function AdminDashboardPage() {
                           <div className="inline-flex items-center gap-1.5">
                             <button
                               onClick={() => handleOpenEdit(laptop)}
-                              className="p-1.5 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white hover:border-[#1E90FF] hover:bg-[#1E90FF]/20 transition"
+                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:text-[#1E40AF] hover:border-blue-300 hover:bg-blue-50 transition shadow-sm"
                               title="Edit Data"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setDeleteTarget(laptop)}
-                              className="p-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition"
+                              className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-[#DC2626] hover:bg-red-100 transition shadow-sm"
                               title="Hapus Laptop"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -696,20 +696,20 @@ export default function AdminDashboardPage() {
 
       {/* ==================== MODAL TAMBAH / EDIT LAPTOP ==================== */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl rounded-2xl border border-[#1E2230] bg-[#12121A] p-6 shadow-2xl my-8">
-            <div className="flex items-center justify-between pb-4 border-b border-[#1E2230]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#1E90FF]/10 border border-[#1E90FF]/30 flex items-center justify-center text-[#1E90FF]">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-[#1E40AF]">
                   {editingLaptop ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 </div>
-                <h3 className="font-heading font-bold text-lg text-white">
+                <h3 className="font-heading font-black text-lg text-slate-900 uppercase">
                   {editingLaptop ? 'Edit Data Laptop' : 'Tambah Laptop Baru'}
                 </h3>
               </div>
               <button
                 onClick={() => !formLoading && setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white transition p-1"
+                className="text-slate-400 hover:text-slate-600 transition p-1"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -719,21 +719,21 @@ export default function AdminDashboardPage() {
               {/* Row 1: Name & Brand */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Nama Laptop / Judul Produk *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: Lenovo ThinkPad T480 Core i5 Gen 8"
+                    placeholder="Contoh: Lenovo ThinkPad T14 Gen 2 Core i5 11th"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white placeholder-slate-600 focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Merk / Brand
                   </label>
                   <input
@@ -742,7 +742,7 @@ export default function AdminDashboardPage() {
                     placeholder="Contoh: Lenovo"
                     value={formBrand}
                     onChange={(e) => setFormBrand(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white placeholder-slate-600 focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
                   />
                   <datalist id="brand-suggestions">
                     {BRAND_SUGGESTIONS.map((b) => (
@@ -755,7 +755,7 @@ export default function AdminDashboardPage() {
               {/* Row 2: Price & Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Harga (Rp) *
                   </label>
                   <input
@@ -763,21 +763,21 @@ export default function AdminDashboardPage() {
                     required
                     min="0"
                     step="10000"
-                    placeholder="Contoh: 4500000"
+                    placeholder="Contoh: 5750000"
                     value={formPrice}
                     onChange={(e) => setFormPrice(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white placeholder-slate-600 focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Status Unit
                   </label>
                   <select
                     value={formStatus}
                     onChange={(e) => setFormStatus(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 font-medium focus:border-[#1E40AF] focus:outline-none"
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>
@@ -791,28 +791,28 @@ export default function AdminDashboardPage() {
               {/* Row 3: CPU & RAM */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Processor (CPU)
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: Intel Core i5-8350U @ 1.70GHz"
+                    placeholder="Contoh: Intel Core i5-1135G7 @ 2.40GHz"
                     value={formCpu}
                     onChange={(e) => setFormCpu(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white placeholder-slate-600 focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     RAM
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: 8GB DDR4 (Dual Channel)"
+                    placeholder="Contoh: 16GB DDR4 (Dual Channel)"
                     value={formRam}
                     onChange={(e) => setFormRam(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white placeholder-slate-600 focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
@@ -820,40 +820,40 @@ export default function AdminDashboardPage() {
               {/* Row 4: Storage & GPU */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Storage / Penyimpanan
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: SSD 256GB NVMe Fast Boot"
+                    placeholder="Contoh: 512GB SSD NVMe High Speed"
                     value={formStorage}
                     onChange={(e) => setFormStorage(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white placeholder-slate-600 focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                     Kartu Grafis (GPU / VGA)
                   </label>
                   <input
                     type="text"
-                    placeholder="Contoh: Intel UHD Graphics 620"
+                    placeholder="Contoh: Intel Iris Xe Graphics"
                     value={formGpu}
                     onChange={(e) => setFormGpu(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-[#0A0A0F] px-3.5 py-2 text-sm text-white placeholder-slate-600 focus:border-[#1E90FF] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Row 5: Foto Laptop (Upload to bucket laptop-photos) */}
+              {/* Row 5: Foto Laptop */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                   Foto Unit (Upload ke Supabase Storage &quot;laptop-photos&quot;)
                 </label>
                 <div className="mt-1 flex items-center gap-4">
                   {/* Image Preview Box */}
-                  <div className="relative w-24 h-20 rounded-xl bg-[#0A0A0F] border border-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="relative w-24 h-20 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                     {formImagePreview ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -862,14 +862,14 @@ export default function AdminDashboardPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <ImageIcon className="w-6 h-6 text-slate-600" />
+                      <ImageIcon className="w-6 h-6 text-slate-400" />
                     )}
                   </div>
 
                   {/* File Upload Trigger */}
                   <div className="flex-1">
-                    <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-xs font-semibold cursor-pointer transition">
-                      <Upload className="w-3.5 h-3.5 text-[#1E90FF]" />
+                    <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer transition shadow-sm">
+                      <Upload className="w-3.5 h-3.5 text-[#1E40AF]" />
                       <span>{formImageFile ? 'Ganti Foto Terpilih' : 'Pilih Foto Laptop'}</span>
                       <input
                         type="file"
@@ -890,19 +890,19 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Form Buttons */}
-              <div className="pt-4 border-t border-[#1E2230] flex items-center justify-end gap-3">
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   disabled={formLoading}
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs sm:text-sm font-semibold hover:bg-slate-700 transition"
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs sm:text-sm font-semibold hover:bg-slate-50 transition shadow-sm"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E90FF] text-white text-xs sm:text-sm font-semibold hover:bg-[#187bcd] transition disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-xs sm:text-sm font-bold transition shadow-md disabled:opacity-50"
                 >
                   {formLoading ? (
                     <>
@@ -921,25 +921,25 @@ export default function AdminDashboardPage() {
 
       {/* ==================== MODAL KONFIRMASI HAPUS ==================== */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-[#12121A] p-6 shadow-2xl">
-            <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-[#DC2626] mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
 
-            <h3 className="font-heading font-bold text-lg text-white mb-2">
+            <h3 className="font-heading font-black text-lg text-slate-900 mb-2">
               Hapus Data Laptop?
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
-              Apakah Anda yakin ingin menghapus unit <strong className="text-white font-semibold">{deleteTarget.name}</strong>? Foto unit di storage juga akan dihapus. Aksi ini tidak dapat dibatalkan.
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+              Apakah Anda yakin ingin menghapus unit <strong className="text-slate-900 font-bold">{deleteTarget.name}</strong>? Foto unit di storage juga akan dihapus. Aksi ini tidak dapat dibatalkan.
             </p>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#1E2230]">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
               <button
                 type="button"
                 disabled={deleteLoading}
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition"
+                className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition shadow-sm"
               >
                 Batal
               </button>
@@ -947,7 +947,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 disabled={deleteLoading}
                 onClick={handleConfirmDelete}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
               >
                 {deleteLoading ? (
                   <>
