@@ -41,7 +41,120 @@ interface LaptopItem {
 }
 
 const STATUS_OPTIONS = ['Tersedia', 'Like New', 'Terjual', 'Booking']
-const BRAND_SUGGESTIONS = ['Asus', 'Lenovo', 'Acer', 'HP', 'Dell', 'Apple', 'MSI', 'Axioo', 'Toshiba']
+const BRAND_SUGGESTIONS = ['Lenovo', 'Asus', 'Acer', 'HP', 'Dell', 'Apple', 'MSI', 'Axioo', 'Toshiba']
+
+const CPU_PRESETS = [
+  'Intel Core i3',
+  'Intel Core i5',
+  'Intel Core i7',
+  'AMD Ryzen 3',
+  'AMD Ryzen 5',
+  'AMD Ryzen 7',
+  'Apple M1',
+  'Apple M2',
+]
+
+const RAM_PRESETS = [
+  '4GB DDR4',
+  '8GB DDR4',
+  '16GB DDR4',
+  '32GB DDR4',
+  '8GB Unified',
+  '16GB Unified',
+]
+
+const STORAGE_PRESETS = [
+  '128GB SSD',
+  '256GB SSD NVMe',
+  '512GB SSD NVMe',
+  '1TB SSD NVMe',
+  '256GB SSD + 1TB HDD',
+]
+
+const GPU_PRESETS = [
+  'Intel UHD / Iris Xe',
+  'Intel HD Graphics',
+  'AMD Radeon Graphics',
+  'NVIDIA GeForce GTX 1650',
+  'NVIDIA GeForce RTX 3050',
+  'Apple M1 GPU',
+]
+
+const QUICK_TEMPLATES = [
+  {
+    label: '💼 ThinkPad / Bisnis',
+    brand: 'Lenovo',
+    name: 'Lenovo ThinkPad Core i5',
+    cpu: 'Intel Core i5 8th / 10th Gen',
+    ram: '8GB DDR4',
+    storage: '256GB SSD NVMe',
+    gpu: 'Intel UHD Graphics',
+    price: '3500000',
+    status: 'Tersedia',
+  },
+  {
+    label: '🎮 Laptop Gaming',
+    brand: 'Asus',
+    name: 'ASUS TUF Gaming Core i5 GTX',
+    cpu: 'Intel Core i5 / AMD Ryzen 5',
+    ram: '16GB DDR4 (Dual Channel)',
+    storage: '512GB SSD NVMe High Speed',
+    gpu: 'NVIDIA GeForce GTX 1650 4GB',
+    price: '7500000',
+    status: 'Tersedia',
+  },
+  {
+    label: '🍎 MacBook M1 / Air',
+    brand: 'Apple',
+    name: 'Apple MacBook Air M1 2020',
+    cpu: 'Apple M1 Chip (8-Core CPU)',
+    ram: '8GB Unified Memory',
+    storage: '256GB Apple SSD',
+    gpu: 'Apple M1 GPU 7-Core',
+    price: '9500000',
+    status: 'Like New',
+  },
+  {
+    label: '🎓 Slim Mahasiswa',
+    brand: 'Asus',
+    name: 'ASUS Vivobook Slim',
+    cpu: 'AMD Ryzen 3 / Intel Core i3',
+    ram: '8GB DDR4',
+    storage: '256GB SSD NVMe',
+    gpu: 'AMD Radeon / Intel UHD',
+    price: '3200000',
+    status: 'Tersedia',
+  },
+]
+
+function detectBrandFromName(name: string): string | null {
+  const lower = name.toLowerCase()
+  if (lower.includes('thinkpad') || lower.includes('ideapad') || lower.includes('legion') || lower.includes('yoga') || lower.includes('lenovo')) {
+    return 'Lenovo'
+  }
+  if (lower.includes('vivobook') || lower.includes('zenbook') || lower.includes('rog') || lower.includes('tuf') || lower.includes('zephyrus') || lower.includes('asus')) {
+    return 'Asus'
+  }
+  if (lower.includes('macbook') || lower.includes('mac') || lower.includes('apple') || lower.includes('retina')) {
+    return 'Apple'
+  }
+  if (lower.includes('aspire') || lower.includes('nitro') || lower.includes('swift') || lower.includes('predator') || lower.includes('acer')) {
+    return 'Acer'
+  }
+  if (lower.includes('pavilion') || lower.includes('victus') || lower.includes('omen') || lower.includes('elitebook') || lower.includes('probook') || lower.includes('envy') || lower.includes('hp')) {
+    return 'HP'
+  }
+  if (lower.includes('latitude') || lower.includes('inspiron') || lower.includes('vostro') || lower.includes('xps') || lower.includes('alienware') || lower.includes('dell')) {
+    return 'Dell'
+  }
+  if (lower.includes('katana') || lower.includes('cyborg') || lower.includes('stealth') || lower.includes('gf63') || lower.includes('msi') || lower.includes('bravo')) {
+    return 'MSI'
+  }
+  if (lower.includes('hype') || lower.includes('mybook') || lower.includes('axioo') || lower.includes('pongo')) {
+    return 'Axioo'
+  }
+  return null
+}
 
 function formatRupiah(amount?: number | null): string {
   if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) {
@@ -156,20 +269,41 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // Open Create Form
+  // Open Create Form - Auto-fills standard default values
   const handleOpenCreate = () => {
     setEditingLaptop(null)
     setFormName('')
-    setFormBrand('')
-    setFormCpu('')
-    setFormRam('')
-    setFormStorage('')
-    setFormGpu('')
+    setFormBrand('Lenovo')
+    setFormCpu('Intel Core i5')
+    setFormRam('8GB DDR4')
+    setFormStorage('256GB SSD NVMe')
+    setFormGpu('Intel UHD / Iris Xe')
     setFormPrice('')
     setFormStatus('Tersedia')
     setFormImageFile(null)
     setFormImagePreview(null)
     setIsModalOpen(true)
+  }
+
+  // Apply Quick Template
+  const handleApplyTemplate = (tpl: (typeof QUICK_TEMPLATES)[0]) => {
+    setFormName(tpl.name)
+    setFormBrand(tpl.brand)
+    setFormCpu(tpl.cpu)
+    setFormRam(tpl.ram)
+    setFormStorage(tpl.storage)
+    setFormGpu(tpl.gpu)
+    setFormPrice(tpl.price)
+    setFormStatus(tpl.status)
+  }
+
+  // Handle Name change with smart brand auto-detection
+  const handleNameChange = (val: string) => {
+    setFormName(val)
+    const detected = detectBrandFromName(val)
+    if (detected) {
+      setFormBrand(detected)
+    }
   }
 
   // Open Edit Form
