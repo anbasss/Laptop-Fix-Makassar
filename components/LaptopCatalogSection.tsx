@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Search,
   Laptop as LaptopIcon,
@@ -15,6 +15,7 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 export interface LaptopItem {
   id?: string | number
@@ -86,6 +87,25 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
   const [selectedBrand, setSelectedBrand] = useState<string>('ALL')
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
   const [sortBy, setSortBy] = useState<string>('latest') // 'latest' | 'price-asc' | 'price-desc'
+  const [selectedLaptop, setSelectedLaptop] = useState<LaptopItem | null>(null)
+
+  useEffect(() => {
+    if (!selectedLaptop) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedLaptop(null)
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedLaptop])
 
   // Extract unique brands for filter tabs
   const brandList = useMemo(() => {
@@ -452,16 +472,6 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                           </div>
                         </div>
 
-                        <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2.5">
-                          <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-wider text-[#1E40AF]">
-                            <span>Detail Laptop</span>
-                            <span>{laptop.brand || 'Laptop'} • {statusInfo.label}</span>
-                          </div>
-                          <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
-                            {laptop.name} dengan {laptop.cpu || 'prosesor standar'}, {laptop.ram || 'RAM standar'}, dan {laptop.storage || 'penyimpanan standar'}.
-                            {laptop.gpu ? ` Grafis: ${laptop.gpu}.` : ''}
-                          </p>
-                        </div>
                       </div>
                     </div>
 
@@ -476,15 +486,25 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                         </div>
                       </div>
 
-                      <a
-                        href={waUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-xs font-bold tracking-wide transition shadow-sm active:scale-95 group-hover:bg-[#DC2626]"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        <span>Tanya Unit via WhatsApp</span>
-                      </a>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLaptop(laptop)}
+                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#1E40AF] bg-white hover:bg-blue-50 text-[#1E40AF] text-xs font-bold tracking-wide transition shadow-sm active:scale-95"
+                        >
+                          <LaptopIcon className="w-4 h-4" />
+                          <span>Lihat Detail</span>
+                        </button>
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#1E40AF] hover:bg-[#1E3A8A] text-white text-xs font-bold tracking-wide transition shadow-sm active:scale-95 group-hover:bg-[#DC2626]"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          <span>Tanya via WhatsApp</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -493,6 +513,106 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
           </div>
         )}
       </div>
+
+      {selectedLaptop && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setSelectedLaptop(null)
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="laptop-detail-title"
+            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedLaptop(null)}
+              aria-label="Tutup detail laptop"
+              className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-600 shadow-md transition hover:bg-slate-100 hover:text-slate-900"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <div className="relative aspect-[16/10] min-h-56 bg-slate-100 md:aspect-auto">
+                {selectedLaptop.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={selectedLaptop.image_url}
+                    alt={selectedLaptop.name}
+                    className="h-full min-h-56 w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full min-h-56 flex-col items-center justify-center gap-2 text-slate-400">
+                    <LaptopIcon className="h-16 w-16 stroke-[1.25]" />
+                    <span className="text-xs font-medium">Foto Belum Tersedia</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-5 sm:p-7">
+                <div className="mb-4 flex flex-wrap items-center gap-2 pr-8">
+                  <span className={`inline-flex rounded-md border px-2.5 py-1 text-[11px] font-bold ${getStatusBadge(selectedLaptop.status).className}`}>
+                    {getStatusBadge(selectedLaptop.status).label}
+                  </span>
+                  {selectedLaptop.brand && (
+                    <span className="rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase text-white">
+                      {selectedLaptop.brand}
+                    </span>
+                  )}
+                </div>
+
+                <h2 id="laptop-detail-title" className="font-heading text-xl font-black leading-tight text-slate-900 sm:text-2xl">
+                  {selectedLaptop.name}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  Laptop pilihan Laptop Fix Makassar yang telah melalui pengecekan kualitas sebelum ditawarkan kepada pelanggan.
+                </p>
+
+                <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {([
+                    { label: 'CPU', value: selectedLaptop.cpu || 'Standar', icon: Cpu },
+                    { label: 'RAM', value: selectedLaptop.ram || '-', icon: Layers },
+                    { label: 'Storage', value: selectedLaptop.storage || '-', icon: HardDrive },
+                    { label: 'GPU', value: selectedLaptop.gpu || 'Integrated', icon: Monitor },
+                  ] as Array<{ label: string; value: string; icon: LucideIcon }>).map(({ label, value, icon: SpecIcon }) => {
+                    return (
+                      <div key={label} className="flex min-w-0 items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                        <SpecIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#1E40AF]" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</span>
+                          <span className="block truncate text-xs font-semibold text-slate-800">{value}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-5 border-t border-slate-200 pt-4">
+                  <span className="block text-xs font-medium text-slate-500">Harga</span>
+                  <span className="font-heading text-2xl font-black text-[#DC2626]">{formatRupiah(selectedLaptop.price)}</span>
+                </div>
+
+                <a
+                  href={getWhatsAppProductUrl(selectedLaptop.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E40AF] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#1E3A8A]"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Tanya Unit via WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
