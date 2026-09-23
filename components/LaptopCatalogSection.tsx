@@ -26,8 +26,11 @@ export interface LaptopItem {
   storage?: string | null
   gpu?: string | null
   price?: number | null
+  original_price?: number | null
+  bonus?: string | null
   status?: string | null
   image_url?: string | null
+  image_urls?: string[] | null
   created_at?: string | null
 }
 
@@ -45,6 +48,11 @@ function formatRupiah(amount?: number | null): string {
     currency: 'IDR',
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+function getDiscountPercentage(original?: number | null, promo?: number | null): number | null {
+  if (!original || !promo || original <= promo || original <= 0) return null
+  return Math.round(((original - promo) / original) * 100)
 }
 
 function getWhatsAppProductUrl(productName: string): string {
@@ -88,6 +96,12 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
   const [sortBy, setSortBy] = useState<string>('latest') // 'latest' | 'price-asc' | 'price-desc'
   const [selectedLaptop, setSelectedLaptop] = useState<LaptopItem | null>(null)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+
+  const getLaptopImages = (laptop: LaptopItem): string[] => {
+    if (laptop.image_urls?.length) return laptop.image_urls
+    return laptop.image_url ? [laptop.image_url] : []
+  }
 
   useEffect(() => {
     if (!selectedLaptop) return
@@ -106,6 +120,11 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [selectedLaptop])
+
+  const openLaptopDetails = (laptop: LaptopItem) => {
+    setSelectedImageIndex(0)
+    setSelectedLaptop(laptop)
+  }
 
   // Extract unique brands for filter tabs
   const brandList = useMemo(() => {
@@ -377,10 +396,10 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                 >
                   {/* Thumbnail Image Container */}
                   <div className="relative aspect-[16/10] w-full bg-slate-100 border-b border-slate-200 overflow-hidden flex items-center justify-center">
-                    {laptop.image_url ? (
+                    {getLaptopImages(laptop)[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={laptop.image_url}
+                        src={getLaptopImages(laptop)[0]}
                         alt={laptop.name}
                         loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -478,9 +497,21 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                     {/* Price & Action Button */}
                     <div className="pt-3 border-t border-slate-100 space-y-3">
                       <div>
-                        <span className="text-[11px] text-slate-500 font-medium block">
-                          Harga:
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            Harga Promo:
+                          </span>
+                          {getDiscountPercentage(laptop.original_price, laptop.price) && (
+                            <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-[#DC2626]">
+                              Hemat {getDiscountPercentage(laptop.original_price, laptop.price)}%
+                            </span>
+                          )}
+                        </div>
+                        {laptop.original_price && laptop.original_price > (laptop.price || 0) && (
+                          <div className="text-xs text-slate-400 line-through">
+                            Harga asli: {formatRupiah(laptop.original_price)}
+                          </div>
+                        )}
                         <div className="font-heading font-black text-xl text-[#DC2626]">
                           {formatRupiah(laptop.price)}
                         </div>
@@ -489,7 +520,7 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => setSelectedLaptop(laptop)}
+                          onClick={() => openLaptopDetails(laptop)}
                           className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-[#1E40AF] bg-white hover:bg-blue-50 text-[#1E40AF] text-xs font-bold tracking-wide transition shadow-sm active:scale-95"
                         >
                           <LaptopIcon className="w-4 h-4" />
@@ -541,10 +572,10 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
 
             <div className="grid grid-cols-1 md:grid-cols-2">
               <div className="relative aspect-[16/10] min-h-56 bg-slate-100 md:aspect-auto">
-                {selectedLaptop.image_url ? (
+                {getLaptopImages(selectedLaptop)[selectedImageIndex] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={selectedLaptop.image_url}
+                    src={getLaptopImages(selectedLaptop)[selectedImageIndex]}
                     alt={selectedLaptop.name}
                     className="h-full min-h-56 w-full object-cover"
                   />
@@ -552,6 +583,29 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                   <div className="flex h-full min-h-56 flex-col items-center justify-center gap-2 text-slate-400">
                     <LaptopIcon className="h-16 w-16 stroke-[1.25]" />
                     <span className="text-xs font-medium">Foto Belum Tersedia</span>
+                  </div>
+                )}
+                {getLaptopImages(selectedLaptop).length > 1 && (
+                  <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedImageIndex((index) => (index - 1 + getLaptopImages(selectedLaptop).length) % getLaptopImages(selectedLaptop).length)}
+                      className="h-8 w-8 rounded-full bg-white/90 text-slate-700 shadow transition hover:bg-white"
+                      aria-label="Foto sebelumnya"
+                    >
+                      ‹
+                    </button>
+                    <span className="rounded-full bg-slate-950/70 px-2.5 py-1 text-[10px] font-bold text-white">
+                      {selectedImageIndex + 1} / {getLaptopImages(selectedLaptop).length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedImageIndex((index) => (index + 1) % getLaptopImages(selectedLaptop).length)}
+                      className="h-8 w-8 rounded-full bg-white/90 text-slate-700 shadow transition hover:bg-white"
+                      aria-label="Foto berikutnya"
+                    >
+                      ›
+                    </button>
                   </div>
                 )}
               </div>
@@ -597,6 +651,12 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                 <div className="mt-5 border-t border-slate-200 pt-4">
                   <span className="block text-xs font-medium text-slate-500">Harga</span>
                   <span className="font-heading text-2xl font-black text-[#DC2626]">{formatRupiah(selectedLaptop.price)}</span>
+                  {selectedLaptop.original_price && selectedLaptop.original_price > (selectedLaptop.price || 0) && (
+                    <span className="ml-2 text-xs text-slate-400 line-through">{formatRupiah(selectedLaptop.original_price)}</span>
+                  )}
+                  {selectedLaptop.bonus && (
+                    <p className="mt-2 text-xs font-semibold text-emerald-700">Bonus: {selectedLaptop.bonus}</p>
+                  )}
                 </div>
 
                 <a

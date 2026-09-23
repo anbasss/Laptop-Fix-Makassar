@@ -39,8 +39,11 @@ interface LaptopItem {
   storage?: string | null
   gpu?: string | null
   price?: number | null
+  original_price?: number | null
+  bonus?: string | null
   status?: string | null
   image_url?: string | null
+  image_urls?: string[] | null
   created_at?: string | null
 }
 
@@ -58,6 +61,11 @@ function formatRupiah(amount?: number | null): string {
     currency: 'IDR',
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+function getDiscountPercentage(original?: number | null, promo?: number | null): number | null {
+  if (!original || !promo || original <= promo || original <= 0) return null
+  return Math.round(((original - promo) / original) * 100)
 }
 
 function getWhatsAppProductUrl(productName: string): string {
@@ -96,10 +104,19 @@ export default async function HomePage() {
   let laptops: LaptopItem[] = []
 
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('laptops')
-      .select('name, brand, cpu, ram, storage, gpu, price, status, image_url, created_at')
+      .select('name, brand, cpu, ram, storage, gpu, price, original_price, bonus, status, image_url, image_urls, created_at')
       .order('created_at', { ascending: false })
+
+    if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message.includes('image_urls'))) {
+      const fallback = await supabase
+        .from('laptops')
+        .select('name, brand, cpu, ram, storage, gpu, price, original_price, bonus, status, image_url, created_at')
+        .order('created_at', { ascending: false })
+      data = fallback.data
+      error = fallback.error
+    }
 
     if (!error && data) {
       laptops = data as LaptopItem[]
@@ -136,13 +153,13 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-h-20 sm:h-24 py-2 sm:py-0 flex items-center justify-between gap-2">
           {/* Logo & Brand Identity */}
           <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="relative w-28 h-14 sm:w-52 sm:h-20 shrink-0 overflow-hidden">
+            <div className="relative w-36 h-16 sm:w-64 sm:h-24 shrink-0 overflow-hidden">
               <Image
                 src="/logo.png"
                 alt="Logo Laptop Fix Makassar"
                 fill
-                sizes="(max-width: 640px) 112px, 208px"
-                className="object-contain sm:scale-150"
+                sizes="(max-width: 640px) 144px, 256px"
+                className="object-contain scale-[2.1] sm:scale-150"
               />
             </div>
             <div className="hidden sm:flex flex-col">
@@ -338,9 +355,19 @@ export default async function HomePage() {
                   <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-4">
                     <div>
                       <span className="text-[11px] text-slate-500 block font-medium">Harga Promo:</span>
+                      {featuredLaptop?.original_price && featuredLaptop.original_price > (featuredLaptop.price || 0) && (
+                        <div className="text-xs text-slate-400 line-through">
+                          Harga asli: {formatRupiah(featuredLaptop.original_price)}
+                        </div>
+                      )}
                       <div className="font-heading font-black text-2xl text-[#DC2626]">
                         {formatRupiah(featuredLaptop?.price || 5750000)}
                       </div>
+                      {getDiscountPercentage(featuredLaptop?.original_price, featuredLaptop?.price) && (
+                        <span className="text-[10px] font-bold text-emerald-600">
+                          Hemat {getDiscountPercentage(featuredLaptop?.original_price, featuredLaptop?.price)}%
+                        </span>
+                      )}
                     </div>
 
                     <a
@@ -451,9 +478,9 @@ export default async function HomePage() {
                 <Image
                   src="/logo.png"
                   alt="Logo Laptop Fix Makassar"
-                  width={280}
-                  height={96}
-                  className="h-24 w-[280px] object-contain object-left"
+                  width={340}
+                  height={116}
+                  className="h-28 w-[340px] object-contain object-left"
                 />
                 <span className="font-heading font-black text-lg text-white">
                   Laptop Fix Makassar

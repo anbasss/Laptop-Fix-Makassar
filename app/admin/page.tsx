@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { createWorker } from 'tesseract.js'
 import Link from 'next/link'
 import {
   Laptop as LaptopIcon,
@@ -35,8 +36,11 @@ interface LaptopItem {
   storage?: string | null
   gpu?: string | null
   price?: number | null
+  original_price?: number | null
+  bonus?: string | null
   status?: string | null
   image_url?: string | null
+  image_urls?: string[] | null
   created_at?: string | null
 }
 
@@ -127,6 +131,168 @@ const QUICK_TEMPLATES = [
   },
 ]
 
+interface ParsedPosterData {
+  name?: string
+  cpu?: string
+  ram?: string
+  storage?: string
+  gpu?: string
+  price?: string
+  originalPrice?: string
+  bonus?: string
+}
+
+const FIXED_BONUS = 'TAS SOFCASE, MOUSE, MOUSPAD'
+
+function normalizeOcrText(text: string): string {
+  return text
+    .replace(/[—–]/g, '-')
+    .replace(/\bRss\b/gi, 'Rp')
+    .replace(/\bFrel\b/gi, 'Free')
+    .replace(/\bCore\s+i7-\s*(\d{3,5})/gi, 'Core i7-$1')
+    .replace(/\r/g, '')
+    .replace(/[|]/g, 'I')
+    .replace(/[“”]/g, '"')
+    .split('\n')
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+}
+
+function parsePrice(value: string): string {
+  const digits = value.replace(/[^\d]/g, '')
+  return digits ? digits : ''
+}
+
+function extractPrices(text: string): string[] {
+  const labelled = [...text.matchAll(/(?:rp|idr)\s*[:.]?\s*([\d][\d.,\s-]{3,})/gi)]
+    .map((match) => parsePrice(match[1]))
+  const standalone = [...text.matchAll(/\b\d{1,3}(?:[.,]\d{3}){2}\b/g)]
+    .map((match) => parsePrice(match[0]))
+  return [...new Set([...labelled, ...standalone])].filter((value) => value.length >= 5)
+}
+
+function cleanProcessor(value: string): string {
+  const match = value.match(/(?:intel\s+)?(?:core\s+)?i[357](?:\s*-\s*[a-z0-9]{3,8})?/i)
+  const cleaned = (match?.[0] || value)
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return cleaned.replace(/i([357])-(\d{4,6})$/i, (_, tier: string, model: string) => {
+    if (model.endsWith('00')) {
+      return `i${tier}-${model.slice(0, -1)}U`
+    }
+    return `i${tier}-${model}`
+  })
+}
+
+function extractProcessor(text: string, lines: string[]): string | undefined {
+  const coreMatch = text.match(/(?:intel\s+)?(?:core\s+)?i[357]\b/i)
+  if (!coreMatch || coreMatch.index === undefined) return undefined
+
+  const core = coreMatch[0].replace(/\s+/g, ' ').trim()
+  const startLine = lines.findIndex((line) => new RegExp(core.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(line))
+  const nearbyLines = startLine >= 0
+    ? lines.slice(startLine, startLine + 4).join(' ')
+    : text.slice(coreMatch.index, coreMatch.index + 180)
+  const generation = nearbyLines.match(/\b(\d{4,6})(?:\s*(u|h|g\d))?\b/i)
+
+  if (!generation) return core
+  return cleanProcessor(`${core}-${generation[1]}${generation[2] || ''}`)
+}
+
+function cleanStorage(value: string): string {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+  const capacity = normalized.match(/\b(128|256|512|1000|1024)\s*(gb|tb)\b/i)?.[0] || ''
+  const type = normalized.match(/\b(ssd|hdd)\b/i)?.[0]?.toUpperCase() || 'SSD'
+  const nvme = /nvme/i.test(normalized) ? ' NVMe' : ''
+  const m2 = /m\.?\s*2/i.test(normalized) ? ' M.2' : ''
+  return `${type}${m2}${nvme} ${capacity}`.replace(/\s+/g, ' ').trim()
+}
+
+async function preprocessPoster(file: File): Promise<Blob> {
+  const imageUrl = URL.createObjectURL(file)
+  try {
+    const image = new Image()
+    image.src = imageUrl
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve()
+      image.onerror = () => reject(new Error('Gambar poster tidak dapat dibaca.'))
+    })
+
+    const scale = Math.min(2, Math.max(1, 1800 / Math.max(image.width, image.height)))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(image.width * scale)
+    canvas.height = Math.round(image.height * scale)
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Browser tidak mendukung pemrosesan gambar OCR.')
+
+    context.filter = 'grayscale(1) contrast(1.35) brightness(1.05)'
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Gagal menyiapkan gambar OCR.'))), 'image/png')
+    })
+  } finally {
+    URL.revokeObjectURL(imageUrl)
+  }
+}
+
+function parsePosterText(rawText: string): ParsedPosterData {
+  const text = normalizeOcrText(rawText)
+  const lines = text.split('\n')
+  const flatText = lines.join(' ')
+  const findLine = (pattern: RegExp) => lines.find((line) => pattern.test(line))
+  const afterLabel = (pattern: RegExp) => {
+    const line = findLine(pattern)
+    return line?.replace(pattern, '').replace(/^[:\-\s]+/, '').trim()
+  }
+
+  const processorLine =
+    afterLabel(/^(cpu|processor|prosesor)\b/i) ||
+    lines.find((line) => /(intel\s+(core|celeron|pentium)|amd\s+ryzen|apple\s+m[123]|snapdragon)/i.test(line))
+  const processorMatch = flatText.match(/(?:intel\s+)?(?:core\s+)?i[357]\s*-?\s*\d{4,6}\s*(?:u|h|g\d)?/i)
+  const processor = extractProcessor(flatText, lines) || processorMatch?.[0] || processorLine
+  const ramLine =
+    afterLabel(/^ram\b/i) ||
+    lines.find((line) => /\b(?:4|8|16|32|64)\s*gb(?:\s*(?:ddr[345]|unified|ram))?/i.test(line))
+  const ramMatch = flatText.match(/\b(?:4|8|16|24|32|64)\s*gb\s*(?:ddr[345]|unified|ram)?/i)
+  const ram = ramMatch?.[0] || ramLine
+  const storageLine =
+    afterLabel(/^(storage|penyimpanan|hard\s*disk|hdd|ssd)\b/i) ||
+    lines.find((line) => /\b(?:128|256|512|1000|1024)\s*(?:gb|tb)\s*(?:ssd|hdd|nvme)?\b/i.test(line))
+  const storageMatch = flatText.match(
+    /\b(?:(?:ssd|hdd)\s*(?:m\.\s*2\s*)?(?:nvme\s*)?.{0,40}?(?:128|256|512|1000|1024)\s*(?:gb|tb)|(?:128|256|512|1000|1024)\s*(?:gb|tb)\s*(?:ssd|hdd)?\s*(?:m\.\s*2\s*)?(?:nvme)?)\b/i
+  )
+  const storage = storageMatch?.[0] || storageLine
+  const gpuLine =
+    afterLabel(/^(gpu|vga|graphics|kartu grafis)\b/i) ||
+    lines.find((line) => /(nvidia|geforce|rtx|gtx|radeon|iris xe|intel uhd|apple m[123].*gpu)/i.test(line))
+  const gpuMatch = flatText.match(/(?:intel\s+)?(?:iris\s+xe|uhd\s+graphics|radeon\s+graphics|geforce\s+(?:gtx|rtx)\s*\w*)/i)
+  const gpu = gpuMatch?.[0] || gpuLine
+
+  const priceMatches = extractPrices(flatText)
+  const onlyIndex = lines.findIndex((line) => /\bonly\b|promo|diskon|harga jual/i.test(line))
+  const priceIndex = lines.findIndex((line) => /\bprice\b|harga asli|harga normal|sebelum diskon|normal/i.test(line))
+  const promoLine = [onlyIndex >= 0 ? lines.slice(onlyIndex, onlyIndex + 3).join(' ') : '', findLine(/only|promo|diskon|special|spesial|harga jual/i)].find(Boolean)
+  const originalLine = [priceIndex >= 0 ? lines.slice(priceIndex, priceIndex + 3).join(' ') : '', findLine(/harga asli|harga normal|sebelum diskon|normal|price/i)].find(Boolean)
+  const nameLine =
+    afterLabel(/^(nama|model|tipe|laptop)\b/i) ||
+    lines.find((line) => /(laptop|notebook|macbook|thinkpad|vivobook|ideapad|aspire|pavilion|latitude|rog|tuf)/i.test(line))
+
+  return {
+    name: nameLine?.replace(/^(nama|model|tipe|laptop)\s*[:\-]?\s*/i, '').trim(),
+    cpu: processor
+      ? cleanProcessor(processor.replace(/^(cpu|processor|prosesor)\s*[:\-]?\s*/i, ''))
+      : undefined,
+    ram: ram?.replace(/^ram\s*[:\-]?\s*/i, '').trim(),
+    storage: storage ? cleanStorage(storage) : undefined,
+    gpu: gpu?.replace(/^(gpu|vga|graphics|kartu grafis)\s*[:\-]?\s*/i, '').trim(),
+    price: extractPrices(promoLine || '')[0] || (priceMatches.length > 1 ? priceMatches[1] : priceMatches[0]) || '',
+    originalPrice: extractPrices(originalLine || '')[0] || (priceMatches.length > 1 ? priceMatches[0] : ''),
+    bonus: FIXED_BONUS,
+  }
+}
+
 function detectBrandFromName(name: string): string | null {
   const lower = name.toLowerCase()
   if (lower.includes('thinkpad') || lower.includes('ideapad') || lower.includes('legion') || lower.includes('yoga') || lower.includes('lenovo')) {
@@ -176,6 +342,13 @@ function extractStoragePath(imageUrl?: string | null): string | null {
   return null
 }
 
+function isMissingImageUrlsColumnError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const message = 'message' in error && typeof error.message === 'string' ? error.message : ''
+  const code = 'code' in error && typeof error.code === 'string' ? error.code : ''
+  return code === 'PGRST204' || code === '42703' || message.includes('image_urls')
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -205,9 +378,13 @@ export default function AdminDashboardPage() {
   const [formStorage, setFormStorage] = useState('')
   const [formGpu, setFormGpu] = useState('')
   const [formPrice, setFormPrice] = useState<string>('')
+  const [formOriginalPrice, setFormOriginalPrice] = useState<string>('')
+  const [formBonus, setFormBonus] = useState('')
   const [formStatus, setFormStatus] = useState('Tersedia')
-  const [formImageFile, setFormImageFile] = useState<File | null>(null)
-  const [formImagePreview, setFormImagePreview] = useState<string | null>(null)
+  const [formImageFiles, setFormImageFiles] = useState<File[]>([])
+  const [formImagePreviews, setFormImagePreviews] = useState<string[]>([])
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const [ocrText, setOcrText] = useState('')
 
   // Delete modal state
   const [deleteTarget, setDeleteTarget] = useState<LaptopItem | null>(null)
@@ -279,9 +456,12 @@ export default function AdminDashboardPage() {
     setFormStorage('256GB SSD NVMe')
     setFormGpu('Intel UHD / Iris Xe')
     setFormPrice('')
+    setFormOriginalPrice('')
+    setFormBonus(FIXED_BONUS)
+    setOcrText('')
     setFormStatus('Tersedia')
-    setFormImageFile(null)
-    setFormImagePreview(null)
+    setFormImageFiles([])
+    setFormImagePreviews([])
     setIsModalOpen(true)
   }
 
@@ -316,18 +496,62 @@ export default function AdminDashboardPage() {
     setFormStorage(laptop.storage || '')
     setFormGpu(laptop.gpu || '')
     setFormPrice(laptop.price ? laptop.price.toString() : '')
+    setFormOriginalPrice(laptop.original_price ? laptop.original_price.toString() : '')
+    setFormBonus(FIXED_BONUS)
+    setOcrText('')
     setFormStatus(laptop.status || 'Tersedia')
-    setFormImageFile(null)
-    setFormImagePreview(laptop.image_url || null)
+    setFormImageFiles([])
+    setFormImagePreviews(laptop.image_urls?.length ? laptop.image_urls : laptop.image_url ? [laptop.image_url] : [])
     setIsModalOpen(true)
   }
 
   // Image change handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFormImageFile(file)
-      setFormImagePreview(URL.createObjectURL(file))
+    const files = Array.from(e.target.files || [])
+    if (files.length) {
+      setFormImageFiles(files)
+      setFormImagePreviews(files.map((file) => URL.createObjectURL(file)))
+    }
+  }
+
+  const handlePosterOcr = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const poster = event.target.files?.[0]
+    event.target.value = ''
+    if (!poster) return
+
+    setOcrLoading(true)
+    setFeedback(null)
+    try {
+      const worker = await createWorker('eng')
+      const processedPoster = await preprocessPoster(poster)
+      const result = await worker.recognize(processedPoster)
+      await worker.terminate()
+
+      const rawText = result.data.text
+      const parsed = parsePosterText(rawText)
+      setOcrText(rawText)
+
+      if (parsed.name) setFormName(parsed.name)
+      if (parsed.cpu) setFormCpu(parsed.cpu)
+      if (parsed.ram) setFormRam(parsed.ram)
+      if (parsed.storage) setFormStorage(parsed.storage)
+      if (parsed.gpu) setFormGpu(parsed.gpu)
+      if (parsed.price) setFormPrice(parsed.price)
+      if (parsed.originalPrice) setFormOriginalPrice(parsed.originalPrice)
+      setFormBonus(FIXED_BONUS)
+
+      setFeedback({
+        type: 'success',
+        message: 'OCR selesai. Data yang terdeteksi sudah diisikan ke form dan masih bisa diedit.',
+      })
+    } catch (error: unknown) {
+      console.error('OCR error:', error)
+      setFeedback({
+        type: 'error',
+        message: error instanceof Error ? `OCR gagal: ${error.message}` : 'OCR gagal memproses poster.',
+      })
+    } finally {
+      setOcrLoading(false)
     }
   }
 
@@ -368,22 +592,36 @@ export default function AdminDashboardPage() {
       setFeedback({ type: 'error', message: 'Harga laptop tidak valid.' })
       return
     }
+    const numericOriginalPrice = formOriginalPrice
+      ? parseInt(formOriginalPrice.replace(/\D/g, ''), 10)
+      : null
+    if (numericOriginalPrice !== null && (isNaN(numericOriginalPrice) || numericOriginalPrice < 0)) {
+      setFeedback({ type: 'error', message: 'Harga asli laptop tidak valid.' })
+      return
+    }
 
     setFormLoading(true)
 
     try {
-      let finalImageUrl = editingLaptop?.image_url || null
+      let finalImageUrls = editingLaptop?.image_urls?.length
+        ? editingLaptop.image_urls
+        : editingLaptop?.image_url
+          ? [editingLaptop.image_url]
+          : []
 
       // If user uploaded a new photo file
-      if (formImageFile) {
-        finalImageUrl = await uploadImageToStorage(formImageFile)
+      if (formImageFiles.length) {
+        finalImageUrls = await Promise.all(formImageFiles.map(uploadImageToStorage))
 
         // If updating and had an old image in storage, remove it to save space
-        if (editingLaptop?.image_url) {
-          const oldPath = extractStoragePath(editingLaptop.image_url)
-          if (oldPath) {
-            await supabase.storage.from('laptop-photos').remove([oldPath])
-          }
+        const oldImages = editingLaptop?.image_urls?.length
+          ? editingLaptop.image_urls
+          : editingLaptop?.image_url
+            ? [editingLaptop.image_url]
+            : []
+        const oldPaths = oldImages.map(extractStoragePath).filter((path): path is string => Boolean(path))
+        if (oldPaths.length) {
+          await supabase.storage.from('laptop-photos').remove(oldPaths)
         }
       }
 
@@ -395,8 +633,11 @@ export default function AdminDashboardPage() {
         storage: formStorage.trim() || null,
         gpu: formGpu.trim() || null,
         price: numericPrice,
+        original_price: numericOriginalPrice,
+        bonus: FIXED_BONUS,
         status: formStatus,
-        image_url: finalImageUrl,
+        image_url: finalImageUrls[0] || null,
+        image_urls: finalImageUrls,
       }
 
       if (editingLaptop) {
@@ -434,7 +675,9 @@ export default function AdminDashboardPage() {
       console.error('Submit error:', err)
       setFeedback({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data.',
+        message: isMissingImageUrlsColumnError(err)
+          ? 'Database belum diperbarui untuk multi-foto. Jalankan migration image_urls di Supabase SQL Editor, lalu coba simpan lagi.'
+          : err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan data.',
       })
     } finally {
       setFormLoading(false)
@@ -448,15 +691,18 @@ export default function AdminDashboardPage() {
 
     try {
       // 1. Delete image from storage if exists
-      if (deleteTarget.image_url) {
-        const storagePath = extractStoragePath(deleteTarget.image_url)
-        if (storagePath) {
+      const deleteImages = deleteTarget.image_urls?.length
+        ? deleteTarget.image_urls
+        : deleteTarget.image_url
+          ? [deleteTarget.image_url]
+          : []
+      const storagePaths = deleteImages.map(extractStoragePath).filter((path): path is string => Boolean(path))
+      if (storagePaths.length) {
           try {
-            await supabase.storage.from('laptop-photos').remove([storagePath])
+            await supabase.storage.from('laptop-photos').remove(storagePaths)
           } catch (storageErr) {
             console.warn('Could not delete storage image:', storageErr)
           }
-        }
       }
 
       // 2. Delete row from laptops table
@@ -725,10 +971,10 @@ export default function AdminDashboardPage() {
                         {/* Thumbnail */}
                         <td className="py-3 px-4 w-16">
                           <div className="w-14 h-11 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
-                            {laptop.image_url ? (
+                            {(laptop.image_urls?.[0] || laptop.image_url) ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={laptop.image_url}
+                                src={laptop.image_urls?.[0] || laptop.image_url || ''}
                                 alt={laptop.name}
                                 className="w-full h-full object-cover"
                               />
@@ -895,7 +1141,7 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Harga (Rp) *
+                    Harga Promo (Rp) *
                   </label>
                   <input
                     type="number"
@@ -985,6 +1231,41 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
+              {/* OCR Poster */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#1E40AF]">
+                      Isi Otomatis dari Poster
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                      OCR berjalan lokal di browser menggunakan Tesseract.js. Tidak ada API eksternal atau API key.
+                    </p>
+                  </div>
+                  <label className={`inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-300 bg-white px-3.5 py-2 text-xs font-bold text-[#1E40AF] shadow-sm transition hover:bg-blue-50 ${ocrLoading ? 'pointer-events-none opacity-60' : ''}`}>
+                    {ocrLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
+                    <span>{ocrLoading ? 'Membaca Poster...' : 'Scan Poster OCR'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePosterOcr}
+                      disabled={ocrLoading}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {ocrText && (
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-[11px] font-semibold text-slate-600">
+                      Lihat teks mentah hasil OCR
+                    </summary>
+                    <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap rounded-lg bg-white p-2 text-[10px] leading-relaxed text-slate-600">
+                      {ocrText}
+                    </pre>
+                  </details>
+                )}
+              </div>
+
               {/* Row 5: Foto Laptop */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
@@ -993,10 +1274,10 @@ export default function AdminDashboardPage() {
                 <div className="mt-1 flex items-center gap-4">
                   {/* Image Preview Box */}
                   <div className="relative w-24 h-20 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
-                    {formImagePreview ? (
+                    {formImagePreviews.length ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={formImagePreview}
+                        src={formImagePreviews[0]}
                         alt="Preview Foto"
                         className="w-full h-full object-cover"
                       />
@@ -1009,22 +1290,52 @@ export default function AdminDashboardPage() {
                   <div className="flex-1">
                     <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer transition shadow-sm">
                       <Upload className="w-3.5 h-3.5 text-[#1E40AF]" />
-                      <span>{formImageFile ? 'Ganti Foto Terpilih' : 'Pilih Foto Laptop'}</span>
+                      <span>{formImageFiles.length ? 'Ganti Foto Terpilih' : 'Pilih Foto Laptop'}</span>
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={handleImageChange}
                         className="hidden"
                       />
                     </label>
                     <p className="mt-1.5 text-[11px] text-slate-500">
-                      {formImageFile
-                        ? `File: ${formImageFile.name} (${Math.round(formImageFile.size / 1024)} KB)`
+                      {formImageFiles.length
+                        ? `${formImageFiles.length} foto dipilih`
                         : editingLaptop?.image_url
-                        ? 'Unit saat ini telah memiliki foto. Upload baru jika ingin mengganti.'
-                        : 'Format JPG, PNG, atau WebP. Maks 5MB.'}
+                          ? 'Unit saat ini telah memiliki foto. Pilih beberapa foto untuk mengganti semuanya.'
+                          : 'Format JPG, PNG, atau WebP. Pilih beberapa foto sekaligus, maks 5MB per foto.'}
                     </p>
                   </div>
+                </div>
+              </div>
+
+              {/* Harga Asli & Bonus */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Harga Asli
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Contoh: 7.500.000"
+                    value={formOriginalPrice}
+                    onChange={(e) => setFormOriginalPrice(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-[#1E40AF] focus:bg-white focus:outline-none"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Bonus
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Tas, mouse, dan garansi toko"
+                    value={FIXED_BONUS}
+                    readOnly
+                    className="w-full cursor-not-allowed rounded-xl border border-slate-300 bg-slate-100 px-3.5 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none"
+                  />
                 </div>
               </div>
 
