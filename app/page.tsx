@@ -98,7 +98,7 @@ export default async function HomePage() {
   try {
     const { data, error } = await supabase
       .from('laptops')
-      .select('name, brand, cpu, ram, storage, gpu, price, status, image_url')
+      .select('name, brand, cpu, ram, storage, gpu, price, status, image_url, created_at')
       .order('created_at', { ascending: false })
 
     if (!error && data) {
@@ -116,30 +116,36 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-[#1E40AF]/15 selection:text-[#1E40AF]">
       {/* ==================== TOP ANNOUNCEMENT BAR ==================== */}
-      <div className="bg-[#1E40AF] text-white text-xs py-2 px-4 text-center font-medium flex items-center justify-center gap-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-[#DC2626] animate-pulse" />
-        <span>Toko Buka Setiap Hari (09.00 - 21.00 WITA) • Jl. Sultan Alauddin No. 137E, Makassar</span>
-        <span className="hidden sm:inline text-blue-200">|</span>
-        <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" className="hidden sm:inline font-bold underline hover:text-blue-100">
-          Chat Langsung WA: 0823-4666-2991
-        </a>
+      <div className="bg-[#1E40AF] text-white text-[10px] sm:text-xs py-2 overflow-hidden">
+        <div className="announcement-track flex items-center">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex items-center gap-2 px-8 whitespace-nowrap" aria-hidden={copy === 1}>
+              <span className="inline-block w-2 h-2 rounded-full bg-[#DC2626] animate-pulse" />
+              <span>Toko Buka Setiap Hari (09.00 - 21.00 WITA) • Jl. Sultan Alauddin No. 137E, Makassar</span>
+              <span className="text-blue-200">|</span>
+              <a href={`https://wa.me/${WA_NUMBER}`} target="_blank" rel="noopener noreferrer" className="font-bold underline hover:text-blue-100">
+                Chat Langsung WA: 0823-4666-2991
+              </a>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ==================== NAVBAR ==================== */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-h-20 sm:h-24 py-2 sm:py-0 flex items-center justify-between gap-2">
           {/* Logo & Brand Identity */}
           <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="relative w-52 h-20 shrink-0 overflow-hidden">
+            <div className="relative w-28 h-14 sm:w-52 sm:h-20 shrink-0 overflow-hidden">
               <Image
                 src="/logo.png"
                 alt="Logo Laptop Fix Makassar"
                 fill
-                sizes="208px"
-                className="object-contain scale-150"
+                sizes="(max-width: 640px) 112px, 208px"
+                className="object-contain sm:scale-150"
               />
             </div>
-            <div className="flex flex-col">
+            <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1.5 leading-tight">
                 <span className="font-heading font-black text-xl tracking-tight text-slate-900">
                   Laptop Fix <span className="text-[#1E40AF]">Makassar</span>
@@ -153,7 +159,7 @@ export default async function HomePage() {
           </Link>
 
           {/* Nav Links & Contact CTA */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 sm:gap-6">
             <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
               <a href="#katalog" className="hover:text-[#1E40AF] transition-colors">
                 Katalog Laptop
@@ -170,10 +176,11 @@ export default async function HomePage() {
               href={WA_DIRECT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs sm:text-sm font-bold tracking-wide transition-all shadow-sm hover:shadow active:scale-95"
+              className="inline-flex items-center gap-2 px-2.5 sm:px-5 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs sm:text-sm font-bold tracking-wide transition-all shadow-sm hover:shadow active:scale-95 whitespace-nowrap"
             >
               <MessageCircle className="w-4 h-4 fill-white/20" />
-              <span>Hubungi WhatsApp</span>
+              <span className="hidden sm:inline">Hubungi WhatsApp</span>
+              <span className="sm:hidden">WhatsApp</span>
             </a>
           </div>
         </div>
@@ -187,9 +194,9 @@ export default async function HomePage() {
             {/* Left Column: Heading, Trust Copy, CTAs */}
             <div className="lg:col-span-7 space-y-6 text-left">
               {/* Location / Status Pill */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-[#1E40AF] shadow-sm">
+              <div className="inline-flex max-w-full items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-[10px] sm:text-xs font-semibold text-[#1E40AF] shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse" />
-                <span>TOKO FISIK: JL. SULTAN ALAUDDIN NO. 137E, MAKASSAR</span>
+                <span className="truncate">TOKO FISIK: JL. SULTAN ALAUDDIN NO. 137E, MAKASSAR</span>
               </div>
 
               {/* Main Headline */}
@@ -340,7 +347,7 @@ export default async function HomePage() {
                       href={getWhatsAppProductUrl(featuredLaptop?.name || 'ThinkPad T14 Gen 2')}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs sm:text-sm transition shadow-sm active:scale-95"
+                      className="inline-flex items-center justify-center gap-2 px-3 sm:px-5 py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs sm:text-sm transition shadow-sm active:scale-95"
                     >
                       <MessageCircle className="w-4 h-4" />
                       <span>Cek Detail Unit</span>

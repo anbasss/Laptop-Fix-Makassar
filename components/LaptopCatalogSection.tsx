@@ -162,7 +162,7 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
               <Tag className="w-3.5 h-3.5" />
               <span>Katalog Unit Toko</span>
             </div>
-            <h2 className="font-heading font-black text-2xl sm:text-4xl text-slate-900 tracking-tight">
+            <h2 className="font-heading font-black text-2xl sm:text-4xl text-slate-900 tracking-tight leading-tight">
               PILIHAN LAPTOP READY STOCK
             </h2>
           </div>
@@ -270,7 +270,7 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition sm:ml-auto"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>Reset Filter</span>
@@ -450,6 +450,17 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                               {laptop.gpu || 'Integrated'}
                             </span>
                           </div>
+                        </div>
+
+                        <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-wider text-[#1E40AF]">
+                            <span>Detail Laptop</span>
+                            <span>{laptop.brand || 'Laptop'} • {statusInfo.label}</span>
+                          </div>
+                          <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                            {laptop.name} dengan {laptop.cpu || 'prosesor standar'}, {laptop.ram || 'RAM standar'}, dan {laptop.storage || 'penyimpanan standar'}.
+                            {laptop.gpu ? ` Grafis: ${laptop.gpu}.` : ''}
+                          </p>
                         </div>
                       </div>
                     </div>

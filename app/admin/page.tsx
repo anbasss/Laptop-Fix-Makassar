@@ -510,29 +510,29 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-[#1E40AF]/15 selection:text-[#1E40AF]">
       {/* ==================== HEADER ==================== */}
       <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-h-20 py-2 sm:py-0 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-[#1E40AF] text-white flex items-center justify-center font-bold shadow-md">
               <LaptopIcon className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-heading font-black text-lg text-slate-900 uppercase">
+                <span className="font-heading font-black text-sm sm:text-lg text-slate-900 uppercase truncate">
                   Laptop Fix <span className="text-[#1E40AF]">Makassar</span>
                 </span>
                 <span className="rounded-md bg-blue-100 text-[#1E40AF] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border border-blue-200">
                   Admin Panel
                 </span>
               </div>
-              <p className="text-xs text-slate-500 truncate max-w-xs">{userEmail}</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 truncate max-w-[10rem] sm:max-w-xs">{userEmail}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               href="/"
               target="_blank"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm transition"
             >
               <span>Lihat Website</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
@@ -540,10 +540,10 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-[#DC2626] hover:bg-red-100 transition active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-[#DC2626] hover:bg-red-100 transition active:scale-95"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Keluar</span>
+              <span className="hidden sm:inline">Keluar</span>
             </button>
           </div>
         </div>
@@ -664,6 +664,9 @@ export default function AdminDashboardPage() {
             <span>Tambah Laptop Baru</span>
           </button>
         </div>
+        <p className="text-xs text-slate-500">
+          Anda dapat menambahkan laptop sebanyak yang diperlukan. Tidak ada batas maksimal jumlah unit.
+        </p>
 
         {/* ==================== LAPTOPS TABLE / LIST ==================== */}
         <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
