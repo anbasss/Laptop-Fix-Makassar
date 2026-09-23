@@ -165,11 +165,20 @@ function parsePrice(value: string): string {
 }
 
 function extractPrices(text: string): string[] {
-  const labelled = [...text.matchAll(/(?:rp|idr)\s*[:.]?\s*([\d][\d.,\s-]{3,})/gi)]
-    .map((match) => parsePrice(match[1]))
-  const standalone = [...text.matchAll(/\b\d{1,3}(?:[.,]\d{3}){2}\b/g)]
-    .map((match) => parsePrice(match[0]))
-  return [...new Set([...labelled, ...standalone])].filter((value) => value.length >= 5)
+  const labelled: string[] = []
+  const labelledPattern = /(?:rp|idr)\s*[:.]?\s*([\d][\d.,\s-]{3,})/gi
+  let labelledMatch: RegExpExecArray | null
+  while ((labelledMatch = labelledPattern.exec(text)) !== null) {
+    labelled.push(parsePrice(labelledMatch[1]))
+  }
+  const standalone = (text.match(/\b\d{1,3}(?:[.,]\d{3}){2}\b/g) || [])
+    .map((match) => parsePrice(match))
+  const unique = new Set<string>()
+  labelled.forEach((value) => unique.add(value))
+  standalone.forEach((value) => unique.add(value))
+  const prices: string[] = []
+  unique.forEach((value) => prices.push(value))
+  return prices.filter((value) => value.length >= 5)
 }
 
 function cleanProcessor(value: string): string {

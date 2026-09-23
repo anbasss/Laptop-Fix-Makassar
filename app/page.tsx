@@ -114,7 +114,7 @@ export default async function HomePage() {
         .from('laptops')
         .select('name, brand, cpu, ram, storage, gpu, price, original_price, bonus, status, image_url, created_at')
         .order('created_at', { ascending: false })
-      data = fallback.data
+      data = fallback.data as typeof data
       error = fallback.error
     }
 
