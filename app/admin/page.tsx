@@ -429,6 +429,7 @@ export default function AdminDashboardPage() {
       setIsModalOpen(false)
       // Refresh list without full page reload
       await fetchLaptops()
+      router.refresh()
     } catch (err: unknown) {
       console.error('Submit error:', err)
       setFeedback({
@@ -473,6 +474,7 @@ export default function AdminDashboardPage() {
 
       setDeleteTarget(null)
       await fetchLaptops()
+      router.refresh()
     } catch (err: unknown) {
       console.error('Delete error:', err)
       setFeedback({

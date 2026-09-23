@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Laptop as LaptopIcon,
   Cpu,
@@ -25,7 +26,8 @@ import {
 } from 'lucide-react'
 import LaptopCatalogSection from '@/components/LaptopCatalogSection'
 
-// Real-time data fetching tanpa static cache
+// Selalu ambil data terbaru dari Supabase agar perubahan di admin langsung terlihat di landing page.
+export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 interface LaptopItem {
@@ -125,21 +127,27 @@ export default async function HomePage() {
 
       {/* ==================== NAVBAR ==================== */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
           {/* Logo & Brand Identity */}
           <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="w-10 h-10 rounded-xl bg-[#1E40AF] text-white flex items-center justify-center font-bold shadow-md shrink-0 group-hover:bg-[#1E3A8A] transition-colors">
-              <LaptopIcon className="w-5 h-5" />
+            <div className="relative w-52 h-20 shrink-0 overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="Logo Laptop Fix Makassar"
+                fill
+                sizes="208px"
+                className="object-contain scale-150"
+              />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 leading-tight">
-                <span className="font-heading font-black text-xl tracking-tight text-slate-900 uppercase">
-                  LAPTOP <span className="text-[#1E40AF]">FIX</span>
+                <span className="font-heading font-black text-xl tracking-tight text-slate-900">
+                  Laptop Fix <span className="text-[#1E40AF]">Makassar</span>
                 </span>
                 <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
               </div>
               <span className="text-[10px] text-slate-500 font-bold tracking-wider uppercase">
-                MAKASSAR • JUAL BELI &amp; SERVIS
+                JUAL BELI &amp; SERVIS LAPTOP
               </span>
             </div>
           </Link>
@@ -432,16 +440,17 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {/* Column 1: Store Bio */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#1E40AF] text-white flex items-center justify-center font-bold shadow-sm">
-                  <LaptopIcon className="w-5 h-5" />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-heading font-black text-lg text-white">
-                    LAPTOP <span className="text-blue-400">FIX</span>
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
-                </div>
+              <div className="flex flex-col items-start gap-2">
+                <Image
+                  src="/logo.png"
+                  alt="Logo Laptop Fix Makassar"
+                  width={280}
+                  height={96}
+                  className="h-24 w-[280px] object-contain object-left"
+                />
+                <span className="font-heading font-black text-lg text-white">
+                  Laptop Fix Makassar
+                </span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
                 Spesialis jual beli laptop second berkualitas, tukar tambah cepat, dan layanan servis motherboard profesional di Kota Makassar.
