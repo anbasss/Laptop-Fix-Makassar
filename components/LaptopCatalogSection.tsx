@@ -395,7 +395,7 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                   className="group rounded-2xl bg-white border border-slate-200 hover:border-[#1E40AF]/50 transition-all duration-300 flex flex-col overflow-hidden shadow-sm hover:shadow-lg"
                 >
                   {/* Thumbnail Image Container */}
-                  <div className="relative aspect-[16/10] w-full bg-slate-100 border-b border-slate-200 overflow-hidden flex items-center justify-center">
+                  <div className="relative aspect-square w-full bg-slate-100 border-b border-slate-200 overflow-hidden flex items-center justify-center">
                     {getLaptopImages(laptop)[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -411,8 +411,8 @@ export default function LaptopCatalogSection({ laptops }: LaptopCatalogSectionPr
                       </div>
                     )}
 
-                    {/* Top-Left Badge */}
-                    <div className="absolute top-3 left-3 z-10">
+                    {/* Status Badge */}
+                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border shadow-sm ${statusInfo.className}`}
                       >
